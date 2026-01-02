@@ -6,14 +6,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type User struct {
-	ID           uuid.UUID `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`
-	Email        string    `gorm:"unique;not null" json:"email"`
-	PasswordHash string    `gorm:"not null" json:"-"`
-	IsActive     bool      `gorm:"default:true" json:"is_active"`
-	CreatedAt    time.Time `json:"created_at"`
-}
-
 // delivery request model
 type DeliveryRequest struct {
 	ID              uuid.UUID `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`

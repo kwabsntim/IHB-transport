@@ -1,18 +1,13 @@
 package main
 
 import (
-	"IHB-transport/internal/database"
-	"IHB-transport/migrations"
+	
+	"ihb-transport/internal/database"
+	"ihb-transport/migrations"
 	"log"
-
-	"github.com/joho/godotenv"
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
 	log.Println("Connecting to database for migration...")
 	// Connect to Postgres
 	database.Connection()
