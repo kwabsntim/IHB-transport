@@ -5,49 +5,86 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 )
 
+type contextKey string
+
+const EmailKey contextKey = "email"
+const RoleKey contextKey = "role"
+
+// authentication middleware //remember c.abort() stops the execution of further middleware/handlers
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Get token from Authorization header
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "missing authorization header"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header required"})
 			c.Abort()
 			return
 		}
 
-		// Format: "Bearer <token>"
+		// Check Bearer format
 		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid authorization format"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization format"})
 			c.Abort()
 			return
 		}
 
-		tokenString := parts[1]
+		token := parts[1]
 
 		// Validate token
-		token, err := ValidateToken(tokenString)
+		claims, err := ValidateToken(token)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 			c.Abort()
 			return
 		}
 
-		// Extract claims
-		claims, ok := token.Claims.(jwt.MapClaims)
+		// Extract user ID from claims
+		userID, ok := (*claims)["email"].(string)
 		if !ok {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token claims"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
 			c.Abort()
 			return
 		}
 
-		// Store claims in context for handlers to use
-		c.Set("email", claims["Email"])
-		c.Set("role", claims["role"])
+		// Extract the role of the user
+		role, ok := (*claims)["role"].(string)
+		if !ok {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
+			c.Abort()
+			return
+		}
 
-		c.Next() // Continue to handler
+		// Store user info in Gin context for handlers to use
+		c.Set("email", userID)
+		c.Set("role", role)
+
+		// Continue to next middleware/handler
+		c.Next()
+	}
+}
+
+// the middleware that extracts the role of the user from the response
+func RoleMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Get role from context (set by AuthMiddleware)
+		role, exists := c.Get("role")
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "No role found in context"})
+			c.Abort()
+			return
+		}
+
+		roleStr, ok := role.(string)
+		if !ok || roleStr != "admin" {
+			c.JSON(http.StatusForbidden, gin.H{"error": "You cannot access this resource"})
+			c.Abort()
+			return
+		}
+
+		// Continue to next middleware/handler
+		c.Next()
 	}
 }
