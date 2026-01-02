@@ -7,11 +7,12 @@ import (
 )
 
 func Migrate() {
+
 	err := database.DB.AutoMigrate(
-		&models.User{},
 		&models.DeliveryRequest{},
 		&models.StatusLog{},
 		&models.EmailLog{},
+		&models.Admin{},
 	)
 
 	if err != nil {

@@ -6,6 +6,14 @@ import (
 	"github.com/google/uuid"
 )
 
+type Admin struct {
+	ID           uuid.UUID `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`
+	Email        string    `gorm:"type:varchar(120);unique;not null" json:"email"`
+	PasswordHash string    `gorm:"type:varchar(255);not null" json:"password_hash"`
+	CreatedAt    time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt    time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+}
+
 // delivery request model
 type DeliveryRequest struct {
 	ID              uuid.UUID `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`
