@@ -2,9 +2,9 @@ package main
 
 import (
 	"ihb-transport/internal/database"
-	"net/http"
-
+	"ihb-transport/internal/handlers"
 	"log"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -20,12 +20,17 @@ func main() {
 	database.Connection()
 
 	router := gin.Default()
+
+	// Health check endpoint
 	router.GET("/ping", func(c *gin.Context) {
-		// Respond with a JSON message and an HTTP status 200 OK
 		c.JSON(http.StatusOK, gin.H{
 			"message": "pong",
 		})
 	})
-	router.Run(":8080")
 
+	// Setup all routes
+	handlers.SetupRoutes(router)
+
+	log.Println("🚀 Server running on :8080")
+	router.Run(":8080")
 }
