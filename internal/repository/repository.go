@@ -13,19 +13,19 @@ type deliveryRepository struct {
 	db *gorm.DB
 }
 
-func NewDeliverRepository() DelivveryInterface {
+func NewDeliveryRepository() DeliveryInterface {
 	return &deliveryRepository{
 		db: database.DB,
 	}
 }
 
 // create a delivery
-func (r *deliveryRepository) CreateDelivery(delivery *models.DeliveryRequest) (*models.DeliveryRequest, error) {
-	err := r.db.Create(delivery)
-	if err != nil {
+func (r *deliveryRepository) CreateDelivery(delivery *models.DeliveryRequest) error {
+	if err := r.db.Create(delivery).Error; err != nil {
 		log.Fatalf("Could not create delivery")
+		return err
 	}
-	return delivery, nil
+	return nil
 }
 
 // get all the deliveries
@@ -91,9 +91,9 @@ func (r *deliveryRepository) FindByEmail(email string) ([]models.DeliveryRequest
 
 // update the contents of a delivery
 func (r *deliveryRepository) UpdateDelivery(delivery *models.DeliveryRequest) error {
-	err := r.db.Save(delivery)
-	if err != nil {
+	if err := r.db.Save(delivery).Error; err != nil {
 		log.Fatalf("Could not update delivery")
+		return err
 	}
 	return nil
 }

@@ -6,18 +6,18 @@ import (
 	"github.com/google/uuid"
 )
 
-type DelivveryInterface interface {
+type DeliveryInterface interface {
 	// Create operations
-	Create(delivery *models.DeliveryRequest) error
+	CreateDelivery(delivery *models.DeliveryRequest) error // ← Match implementation
 
 	// Read operations
-	FindAll() ([]models.DeliveryRequest, error)
+	FindAllDeliveries() ([]models.DeliveryRequest, error) // ← Match implementation
 	FindByID(id uuid.UUID) (*models.DeliveryRequest, error)
 	FindByStatus(status string) ([]models.DeliveryRequest, error)
 	FindByEmail(email string) ([]models.DeliveryRequest, error)
 
 	// Update operations
-	Update(delivery *models.DeliveryRequest) error
+	UpdateDelivery(delivery *models.DeliveryRequest) error // ← Match implementation
 	UpdateStatus(id uuid.UUID, oldStatus, newStatus string) error
 	UpdatePrice(id uuid.UUID, price float64) error
 
