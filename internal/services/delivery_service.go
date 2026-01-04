@@ -44,11 +44,31 @@ func (s *deliveryService) validateCreateInput(delivery *models.DeliveryRequest) 
 		return err
 	}
 
-	if err := utils.ValidateRequired("pickup address", delivery.PickupAddress); err != nil {
+	// Validate pickup address fields
+	if err := utils.ValidateRequired("pickup street", delivery.PickupStreet); err != nil {
+		return err
+	}
+	if err := utils.ValidateRequired("pickup city", delivery.PickupCity); err != nil {
+		return err
+	}
+	if err := utils.ValidateRequired("pickup post code", delivery.PickupPostCode); err != nil {
+		return err
+	}
+	if err := utils.ValidateRequired("pickup country", delivery.PickupCountry); err != nil {
 		return err
 	}
 
-	if err := utils.ValidateRequired("dropoff address", delivery.DropoffAddress); err != nil {
+	// Validate dropoff address fields
+	if err := utils.ValidateRequired("dropoff street", delivery.DropoffStreet); err != nil {
+		return err
+	}
+	if err := utils.ValidateRequired("dropoff city", delivery.DropoffCity); err != nil {
+		return err
+	}
+	if err := utils.ValidateRequired("dropoff post code", delivery.DropoffPostCode); err != nil {
+		return err
+	}
+	if err := utils.ValidateRequired("dropoff country", delivery.DropoffCountry); err != nil {
 		return err
 	}
 
@@ -57,8 +77,13 @@ func (s *deliveryService) validateCreateInput(delivery *models.DeliveryRequest) 
 		return err
 	}
 
-	// Validate weight is not negative
-	if err := utils.ValidatePositiveNumber("weight", delivery.Weight); err != nil {
+	// Validate items description
+	if err := utils.ValidateRequired("items", delivery.Items); err != nil {
+		return err
+	}
+
+	// Validate service
+	if err := utils.ValidateRequired("service", delivery.Service); err != nil {
 		return err
 	}
 
@@ -94,6 +119,12 @@ func (s *deliveryService) CreateDeliveryRequest(delivery *models.DeliveryRequest
 	if err := s.statusLogRepo.CreateStatusLog(&statusLog); err != nil {
 		fmt.Printf("Warning: failed to create status log: %v\n", err)
 	}
+
+	// Send confirmation email to client
+	if err := s.emailService.SendRequestReceivedEmail(delivery.ClientEmail, delivery.ClientName, delivery.ID.String()); err != nil {
+		fmt.Printf("Warning: failed to send request received email: %v\n", err)
+	}
+
 	return nil
 }
 

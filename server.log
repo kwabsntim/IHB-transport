@@ -568,3 +568,4 @@ Please check https://github.com/gin-gonic/gin/blob/master/docs/doc.md#dont-trust
 2026/01/04 14:48:42 [32m/home/kwabsntim/Music/IHB transport/internal/repository/repository.go:74
 [0m[33m[3.575ms] [34;1m[rows:2][0m SELECT * FROM "delivery_requests" WHERE status = 'DELIVERED' ORDER BY created_at DESC
 [GIN] 2026/01/04 - 14:48:42 | 200 |    3.852121ms |       127.0.0.1 | GET      "/api/admin/deliveries/status?status=DELIVERED"
+signal: killed

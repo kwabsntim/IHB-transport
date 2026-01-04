@@ -7,7 +7,9 @@ import (
 )
 
 func Migrate() {
-
+	// AutoMigrate is now safe - all fields are nullable or have defaults
+	// This is idempotent and production-safe
+	log.Println("🚀 Running AutoMigrate...")
 	err := database.DB.AutoMigrate(
 		&models.DeliveryRequest{},
 		&models.StatusLog{},
@@ -16,8 +18,8 @@ func Migrate() {
 	)
 
 	if err != nil {
-		log.Fatalf("❌ Migration failed: %v", err)
+		log.Fatalf("❌ AutoMigrate failed: %v", err)
 	}
 
-	log.Println("✅ Migration successful")
+	log.Println("✅ Migration successful - safe to run anytime!")
 }

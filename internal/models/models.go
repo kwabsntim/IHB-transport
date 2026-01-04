@@ -16,21 +16,38 @@ type Admin struct {
 
 // delivery request model
 type DeliveryRequest struct {
-	ID              uuid.UUID   `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`
-	ClientName      string      `gorm:"type:varchar(120)" json:"client_name"`
-	ClientEmail     string      `gorm:"type:varchar(120);not null" json:"client_email"`
-	PickupAddress   string      `gorm:"type:varchar(255);not null" json:"pickup_address"`
-	DropoffAddress  string      `gorm:"type:varchar(255);not null" json:"dropoff_address"`
-	ItemDescription string      `gorm:"type:varchar(255)" json:"item_description"`
-	Weight          float64     `gorm:"type:decimal(10,2)" json:"weight"`
-	Price           float64     `gorm:"type:decimal(10,2);default:0.0" json:"price"`
-	Status          string      `gorm:"type:varchar(20);default:'REQUESTED'" json:"status"`
-	DeclineReason   string      `gorm:"type:text" json:"decline_reason,omitempty"`
-	DeclinedAt      *time.Time  `gorm:"type:timestamp" json:"declined_at,omitempty"`
-	CreatedAt       time.Time   `gorm:"autoCreateTime" json:"created_at"`
-	UpdatedAt       time.Time   `gorm:"autoUpdateTime" json:"updated_at"`
-	StatusLogs      []StatusLog `gorm:"foreignKey:DeliveryID" json:"status_logs,omitempty"`
-	EmailLogs       []EmailLog  `gorm:"foreignKey:DeliveryID" json:"email_logs,omitempty"`
+	ID          uuid.UUID `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`
+	ClientName  string    `gorm:"type:varchar(120)" json:"client_name"`
+	ClientEmail string    `gorm:"type:varchar(120);not null" json:"client_email"`
+
+	// Pickup Address Details
+	PickupStreet   string `gorm:"type:varchar(255)" json:"pickup_street"`
+	PickupCity     string `gorm:"type:varchar(100)" json:"pickup_city"`
+	PickupPostCode string `gorm:"type:varchar(20)" json:"pickup_post_code"`
+	PickupCountry  string `gorm:"type:varchar(100)" json:"pickup_country"`
+
+	// Dropoff Address Details
+	DropoffStreet   string `gorm:"type:varchar(255)" json:"dropoff_street"`
+	DropoffCity     string `gorm:"type:varchar(100)" json:"dropoff_city"`
+	DropoffPostCode string `gorm:"type:varchar(20)" json:"dropoff_post_code"`
+	DropoffCountry  string `gorm:"type:varchar(100)" json:"dropoff_country"`
+
+	// Item Details
+	ItemDescription string `gorm:"type:varchar(255)" json:"item_description"`
+	Items           string `gorm:"type:text" json:"items"` // Description of items being delivered
+
+	// Service Details
+	Service string `gorm:"type:varchar(100)" json:"service"` // Service type selected from dropdown
+
+	// Delivery Details
+	Price         float64     `gorm:"type:decimal(10,2);default:0.0" json:"price"`
+	Status        string      `gorm:"type:varchar(20);default:'REQUESTED'" json:"status"`
+	DeclineReason string      `gorm:"type:text" json:"decline_reason,omitempty"`
+	DeclinedAt    *time.Time  `gorm:"type:timestamp" json:"declined_at,omitempty"`
+	CreatedAt     time.Time   `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt     time.Time   `gorm:"autoUpdateTime" json:"updated_at"`
+	StatusLogs    []StatusLog `gorm:"foreignKey:DeliveryID" json:"status_logs,omitempty"`
+	EmailLogs     []EmailLog  `gorm:"foreignKey:DeliveryID" json:"email_logs,omitempty"`
 }
 
 // status log model

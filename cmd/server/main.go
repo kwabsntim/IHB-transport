@@ -5,6 +5,7 @@ import (
 	"ihb-transport/internal/handlers"
 	"ihb-transport/internal/repository"
 	"ihb-transport/internal/services"
+	"ihb-transport/migrations"
 	"log"
 	"net/http"
 
@@ -20,6 +21,11 @@ func main() {
 
 	// Connect to Postgres
 	database.Connection()
+
+	// Run migrations automatically (safe to run multiple times)
+	log.Println("🔄 Running database migrations...")
+	migrations.Migrate()
+	log.Println("✅ Migrations complete")
 
 	// ==================== INITIALIZE REPOSITORIES ====================
 	deliveryRepo := repository.NewDeliveryRepository()
@@ -53,20 +59,6 @@ func main() {
 
 	log.Println("🚀 Server running on :8080")
 	log.Println("📋 API Endpoints:")
-	log.Println("   Public:")
-	log.Println("     POST   /login")
-	log.Println("     POST   /api/public/deliveries")
-	log.Println("     GET    /api/public/deliveries/:id")
-	log.Println("     GET    /api/public/deliveries/track?email=...")
-	log.Println("     POST   /api/public/deliveries/:id/accept")
-	log.Println("     POST   /api/public/deliveries/:id/decline")
-	log.Println("   Admin (requires auth):")
-	log.Println("     GET    /api/admin/deliveries")
-	log.Println("     GET    /api/admin/deliveries/status?status=...")
-	log.Println("     POST   /api/admin/deliveries/:id/price")
-	log.Println("   Driver (requires auth):")
-	log.Println("     POST   /api/driver/deliveries/:id/pickup")
-	log.Println("     POST   /api/driver/deliveries/:id/complete")
 
 	router.Run(":8080")
 }

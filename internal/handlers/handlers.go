@@ -74,12 +74,24 @@ func LoginHandler(c *gin.Context) {
 
 // CreateDeliveryInput defines the input for creating a delivery request
 type CreateDeliveryInput struct {
-	ClientName      string  `json:"client_name" binding:"required"`
-	ClientEmail     string  `json:"client_email" binding:"required,email"`
-	PickupAddress   string  `json:"pickup_address" binding:"required"`
-	DropoffAddress  string  `json:"dropoff_address" binding:"required"`
-	ItemDescription string  `json:"item_description"`
-	Weight          float64 `json:"weight"`
+	ClientName  string `json:"client_name" binding:"required"`
+	ClientEmail string `json:"client_email" binding:"required,email"`
+
+	// Pickup Address Details
+	PickupStreet   string `json:"pickup_street" binding:"required"`
+	PickupCity     string `json:"pickup_city" binding:"required"`
+	PickupPostCode string `json:"pickup_post_code" binding:"required"`
+	PickupCountry  string `json:"pickup_country" binding:"required"`
+
+	// Dropoff Address Details
+	DropoffStreet   string `json:"dropoff_street" binding:"required"`
+	DropoffCity     string `json:"dropoff_city" binding:"required"`
+	DropoffPostCode string `json:"dropoff_post_code" binding:"required"`
+	DropoffCountry  string `json:"dropoff_country" binding:"required"`
+
+	ItemDescription string `json:"item_description"`
+	Items           string `json:"items" binding:"required"`
+	Service         string `json:"service" binding:"required"`
 }
 
 // CreateDeliveryHandler handles creation of new delivery requests (public)
@@ -94,10 +106,17 @@ func (h *Handler) CreateDeliveryHandler(c *gin.Context) {
 	delivery := models.DeliveryRequest{
 		ClientName:      input.ClientName,
 		ClientEmail:     input.ClientEmail,
-		PickupAddress:   input.PickupAddress,
-		DropoffAddress:  input.DropoffAddress,
+		PickupStreet:    input.PickupStreet,
+		PickupCity:      input.PickupCity,
+		PickupPostCode:  input.PickupPostCode,
+		PickupCountry:   input.PickupCountry,
+		DropoffStreet:   input.DropoffStreet,
+		DropoffCity:     input.DropoffCity,
+		DropoffPostCode: input.DropoffPostCode,
+		DropoffCountry:  input.DropoffCountry,
 		ItemDescription: input.ItemDescription,
-		Weight:          input.Weight,
+		Items:           input.Items,
+		Service:         input.Service,
 	}
 
 	// Call service
