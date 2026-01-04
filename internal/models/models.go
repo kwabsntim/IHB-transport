@@ -16,19 +16,19 @@ type Admin struct {
 
 // delivery request model
 type DeliveryRequest struct {
-	ID              uuid.UUID `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`
-	ClientName      string    `gorm:"type:varchar(120)" json:"client_name"`
-	ClientEmail     string    `gorm:"type:varchar(120);not null" json:"client_email"`
-	PickupAddress   string    `gorm:"type:varchar(255);not null" json:"pickup_address"`
-	DropoffAddress  string    `gorm:"type:varchar(255);not null" json:"dropoff_address"`
-	ItemDescription string    `gorm:"type:varchar(255)" json:"item_description"`
-	Weight          float64   `gorm:"type:decimal(10,2)" json:"weight"`
-	Status          string    `gorm:"type:varchar(20);default:'REQUESTED'" json:"status"`
-	CreatedAt       time.Time `gorm:"autoCreateTime" json:"created_at"`
-	UpdatedAt       time.Time `gorm:"autoUpdateTime" json:"updated_at"`
-
-	StatusLogs []StatusLog `gorm:"foreignKey:DeliveryID" json:"status_logs,omitempty"`
-	EmailLogs  []EmailLog  `gorm:"foreignKey:DeliveryID" json:"email_logs,omitempty"`
+	ID              uuid.UUID   `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`
+	ClientName      string      `gorm:"type:varchar(120)" json:"client_name"`
+	ClientEmail     string      `gorm:"type:varchar(120);not null" json:"client_email"`
+	PickupAddress   string      `gorm:"type:varchar(255);not null" json:"pickup_address"`
+	DropoffAddress  string      `gorm:"type:varchar(255);not null" json:"dropoff_address"`
+	ItemDescription string      `gorm:"type:varchar(255)" json:"item_description"`
+	Weight          float64     `gorm:"type:decimal(10,2)" json:"weight"`
+	Status          string      `gorm:"type:varchar(20);default:'REQUESTED'" json:"status"`
+	CreatedAt       time.Time   `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt       time.Time   `gorm:"autoUpdateTime" json:"updated_at"`
+	Price           float64     `gorm:"type:decimal(10,2);default:0.0" json:"price"`
+	StatusLogs      []StatusLog `gorm:"foreignKey:DeliveryID" json:"status_logs,omitempty"`
+	EmailLogs       []EmailLog  `gorm:"foreignKey:DeliveryID" json:"email_logs,omitempty"`
 }
 
 // status log model

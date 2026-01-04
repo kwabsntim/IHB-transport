@@ -28,3 +28,17 @@ type DeliveryInterface interface {
 	Count() (int64, error)
 	CountByStatus(status string) (int64, error)
 }
+
+// StatusLogInterface defines operations for status log repository
+type StatusLogInterface interface {
+	CreateStatusLog(log *models.StatusLog) error
+	FindByDeliveryID(deliveryID uuid.UUID) ([]models.StatusLog, error)
+	FindLatestByDeliveryID(deliveryID uuid.UUID) (*models.StatusLog, error)
+}
+
+// EmailLogInterface defines operations for email log repository
+type EmailLogInterface interface {
+	CreateEmailLog(log *models.EmailLog) error
+	FindByDeliveryID(deliveryID uuid.UUID) ([]models.EmailLog, error)
+	UpdateEmailStatus(id uuid.UUID, status string) error
+}

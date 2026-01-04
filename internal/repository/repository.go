@@ -135,3 +135,77 @@ func (r *deliveryRepository) CountByStatus(status string) (int64, error) {
 		Count(&count).Error
 	return count, err
 }
+
+// ===== STATUS LOG REPOSITORY =====
+
+type statusLogRepository struct {
+	db *gorm.DB
+}
+
+func NewStatusLogRepository() StatusLogInterface {
+	return &statusLogRepository{
+		db: database.DB,
+	}
+}
+
+// CreateStatusLog creates a new status log entry
+func (r *statusLogRepository) CreateStatusLog(log *models.StatusLog) error {
+	return r.db.Create(log).Error
+}
+
+// FindByDeliveryID gets all status logs for a delivery
+func (r *statusLogRepository) FindByDeliveryID(deliveryID uuid.UUID) ([]models.StatusLog, error) {
+	var logs []models.StatusLog
+	err := r.db.
+		Where("delivery_id = ?", deliveryID).
+		Order("changed_at DESC").
+		Find(&logs).Error
+	return logs, err
+}
+
+// FindLatestByDeliveryID gets the most recent status log for a delivery
+func (r *statusLogRepository) FindLatestByDeliveryID(deliveryID uuid.UUID) (*models.StatusLog, error) {
+	var log models.StatusLog
+	err := r.db.
+		Where("delivery_id = ?", deliveryID).
+		Order("changed_at DESC").
+		First(&log).Error
+	if err != nil {
+		return nil, err
+	}
+	return &log, nil
+}
+
+// ===== EMAIL LOG REPOSITORY =====
+
+type emailLogRepository struct {
+	db *gorm.DB
+}
+
+func NewEmailLogRepository() EmailLogInterface {
+	return &emailLogRepository{
+		db: database.DB,
+	}
+}
+
+// CreateEmailLog creates a new email log entry
+func (r *emailLogRepository) CreateEmailLog(log *models.EmailLog) error {
+	return r.db.Create(log).Error
+}
+
+// FindByDeliveryID gets all email logs for a delivery
+func (r *emailLogRepository) FindByDeliveryID(deliveryID uuid.UUID) ([]models.EmailLog, error) {
+	var logs []models.EmailLog
+	err := r.db.
+		Where("delivery_id = ?", deliveryID).
+		Order("sent_at DESC").
+		Find(&logs).Error
+	return logs, err
+}
+
+// UpdateEmailStatus updates the status of an email log (e.g., from "pending" to "sent")
+func (r *emailLogRepository) UpdateEmailStatus(id uuid.UUID, status string) error {
+	return r.db.Model(&models.EmailLog{}).
+		Where("id = ?", id).
+		Update("status", status).Error
+}
