@@ -67,7 +67,7 @@ func AuthMiddleware() gin.HandlerFunc {
 }
 
 // the middleware that extracts the role of the user from the response
-func RoleMiddleware() gin.HandlerFunc {
+func RoleMiddleware(role string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Get role from context (set by AuthMiddleware)
 		role, exists := c.Get("role")

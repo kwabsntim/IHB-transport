@@ -23,10 +23,12 @@ type DeliveryRequest struct {
 	DropoffAddress  string      `gorm:"type:varchar(255);not null" json:"dropoff_address"`
 	ItemDescription string      `gorm:"type:varchar(255)" json:"item_description"`
 	Weight          float64     `gorm:"type:decimal(10,2)" json:"weight"`
+	Price           float64     `gorm:"type:decimal(10,2);default:0.0" json:"price"`
 	Status          string      `gorm:"type:varchar(20);default:'REQUESTED'" json:"status"`
+	DeclineReason   string      `gorm:"type:text" json:"decline_reason,omitempty"`
+	DeclinedAt      *time.Time  `gorm:"type:timestamp" json:"declined_at,omitempty"`
 	CreatedAt       time.Time   `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt       time.Time   `gorm:"autoUpdateTime" json:"updated_at"`
-	Price           float64     `gorm:"type:decimal(10,2);default:0.0" json:"price"`
 	StatusLogs      []StatusLog `gorm:"foreignKey:DeliveryID" json:"status_logs,omitempty"`
 	EmailLogs       []EmailLog  `gorm:"foreignKey:DeliveryID" json:"email_logs,omitempty"`
 }
@@ -56,6 +58,7 @@ type EmailLog struct {
 const (
 	StatusRequested  = "REQUESTED"
 	StatusPriced     = "PRICED"
+	StatusDeclined   = "DECLINED"
 	StatusAccepted   = "ACCEPTED"
 	StatusInProgress = "IN_PROGRESS"
 	StatusDelivered  = "DELIVERED"

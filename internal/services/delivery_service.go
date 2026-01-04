@@ -5,6 +5,7 @@ import (
 	"ihb-transport/internal/models"
 	"ihb-transport/internal/repository"
 	"ihb-transport/utils"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -13,17 +14,20 @@ type deliveryService struct {
 	deliveryRepo  repository.DeliveryInterface
 	statusLogRepo repository.StatusLogInterface
 	emailLogRepo  repository.EmailLogInterface
+	emailService  EmailServiceInterface
 }
 
 func NewDeliveryService(
 	deliveryRepo repository.DeliveryInterface,
 	statusLogRepo repository.StatusLogInterface,
 	emailLogRepo repository.EmailLogInterface,
+	emailService EmailServiceInterface,
 ) DeliveryServiceInterface {
 	return &deliveryService{
 		deliveryRepo:  deliveryRepo,
 		statusLogRepo: statusLogRepo,
 		emailLogRepo:  emailLogRepo,
+		emailService:  emailService,
 	}
 }
 
@@ -113,4 +117,268 @@ func (s *deliveryService) SetDeliveryPrice(id string, price float64) error {
 	delivery.Price = price
 	delivery.Status = models.StatusPriced
 
+	if err := s.deliveryRepo.UpdateDelivery(delivery); err != nil {
+		return fmt.Errorf("failed to update delivery: %w", err)
+	}
+
+	// Log status change
+	statusLog := models.StatusLog{
+		DeliveryID: delivery.ID,
+		OldStatus:  oldstatus,
+		NewStatus:  models.StatusPriced,
+		ChangedBy:  "admin",
+	}
+	if err := s.statusLogRepo.CreateStatusLog(&statusLog); err != nil {
+		fmt.Printf("Warning: failed to create status log: %v\n", err)
+	}
+
+	// Send price email
+	if err := s.emailService.SendPriceEmail(delivery.ClientEmail, price, delivery.ID.String()); err != nil {
+		fmt.Printf("Warning: failed to send price email: %v\n", err)
+	}
+
+	return nil
+}
+
+// DeclineDeliveryPrice - Client declines the quoted price
+func (s *deliveryService) DeclineDeliveryPrice(id string, reason string) error {
+	// Step 1: Parse UUID
+	deliveryID, err := uuid.Parse(id)
+	if err != nil {
+		return fmt.Errorf("invalid delivery ID: %w", err)
+	}
+
+	// Step 2: Find delivery
+	delivery, err := s.deliveryRepo.FindByID(deliveryID)
+	if err != nil {
+		return fmt.Errorf("delivery not found: %w", err)
+	}
+
+	// Step 3: Validate status (must be PRICED)
+	if delivery.Status != models.StatusPriced {
+		return fmt.Errorf("can only decline PRICED deliveries, current status: %s", delivery.Status)
+	}
+
+	// Step 4: Validate reason is provided
+	if reason == "" {
+		return fmt.Errorf("decline reason is required")
+	}
+
+	// Step 5: Update delivery with decline info
+	oldStatus := delivery.Status
+	delivery.Status = models.StatusDeclined
+	delivery.DeclineReason = reason
+	now := time.Now()
+	delivery.DeclinedAt = &now
+
+	if err := s.deliveryRepo.UpdateDelivery(delivery); err != nil {
+		return fmt.Errorf("failed to update delivery: %w", err)
+	}
+
+	// Step 6: Log status change
+	statusLog := models.StatusLog{
+		DeliveryID: delivery.ID,
+		OldStatus:  oldStatus,
+		NewStatus:  models.StatusDeclined,
+		ChangedBy:  "client",
+	}
+	if err := s.statusLogRepo.CreateStatusLog(&statusLog); err != nil {
+		fmt.Printf("Warning: failed to create status log: %v\n", err)
+	}
+
+	// Step 7: Send email notification about decline
+	if err := s.emailService.SendDeclinedEmail(delivery.ClientEmail, delivery.ID.String(), reason); err != nil {
+		fmt.Printf("Warning: failed to send decline email: %v\n", err)
+	}
+
+	return nil
+}
+
+// AcceptDeliveryPrice - Client accepts the quoted price
+func (s *deliveryService) AcceptDeliveryPrice(id string) error {
+	deliveryID, err := uuid.Parse(id)
+	if err != nil {
+		return fmt.Errorf("invalid delivery ID: %w", err)
+	}
+
+	delivery, err := s.deliveryRepo.FindByID(deliveryID)
+	if err != nil {
+		return fmt.Errorf("delivery not found: %w", err)
+	}
+
+	if delivery.Status != models.StatusPriced {
+		return fmt.Errorf("can only accept PRICED deliveries, current status: %s", delivery.Status)
+	}
+
+	oldStatus := delivery.Status
+	delivery.Status = models.StatusAccepted
+
+	if err := s.deliveryRepo.UpdateDelivery(delivery); err != nil {
+		return fmt.Errorf("failed to update delivery: %w", err)
+	}
+
+	statusLog := models.StatusLog{
+		DeliveryID: delivery.ID,
+		OldStatus:  oldStatus,
+		NewStatus:  models.StatusAccepted,
+		ChangedBy:  "client",
+	}
+	if err := s.statusLogRepo.CreateStatusLog(&statusLog); err != nil {
+		fmt.Printf("Warning: failed to create status log: %v\n", err)
+	}
+
+	if err := s.emailService.SendAcceptedEmail(delivery.ClientEmail, delivery.ID.String()); err != nil {
+		fmt.Printf("Warning: failed to send accepted email: %v\n", err)
+	}
+
+	return nil
+}
+
+// MarkAsPickedUp - Driver marks delivery as picked up
+func (s *deliveryService) MarkAsPickedUp(id string) error {
+	deliveryID, err := uuid.Parse(id)
+	if err != nil {
+		return fmt.Errorf("invalid delivery ID: %w", err)
+	}
+
+	delivery, err := s.deliveryRepo.FindByID(deliveryID)
+	if err != nil {
+		return fmt.Errorf("delivery not found: %w", err)
+	}
+
+	if delivery.Status != models.StatusAccepted {
+		return fmt.Errorf("can only pick up ACCEPTED deliveries, current status: %s", delivery.Status)
+	}
+
+	oldStatus := delivery.Status
+	delivery.Status = models.StatusInProgress
+
+	if err := s.deliveryRepo.UpdateDelivery(delivery); err != nil {
+		return fmt.Errorf("failed to update delivery: %w", err)
+	}
+
+	statusLog := models.StatusLog{
+		DeliveryID: delivery.ID,
+		OldStatus:  oldStatus,
+		NewStatus:  models.StatusInProgress,
+		ChangedBy:  "driver",
+	}
+	if err := s.statusLogRepo.CreateStatusLog(&statusLog); err != nil {
+		fmt.Printf("Warning: failed to create status log: %v\n", err)
+	}
+
+	if err := s.emailService.SendDriverOnWayEmail(delivery.ClientEmail, delivery.ID.String()); err != nil {
+		fmt.Printf("Warning: failed to send driver on way email: %v\n", err)
+	}
+
+	return nil
+}
+
+// MarkAsDelivered - Driver marks delivery as completed
+func (s *deliveryService) MarkAsDelivered(id string) error {
+	deliveryID, err := uuid.Parse(id)
+	if err != nil {
+		return fmt.Errorf("invalid delivery ID: %w", err)
+	}
+
+	delivery, err := s.deliveryRepo.FindByID(deliveryID)
+	if err != nil {
+		return fmt.Errorf("delivery not found: %w", err)
+	}
+
+	if delivery.Status != models.StatusInProgress {
+		return fmt.Errorf("can only complete IN_PROGRESS deliveries, current status: %s", delivery.Status)
+	}
+
+	oldStatus := delivery.Status
+	delivery.Status = models.StatusDelivered
+
+	if err := s.deliveryRepo.UpdateDelivery(delivery); err != nil {
+		return fmt.Errorf("failed to update delivery: %w", err)
+	}
+
+	statusLog := models.StatusLog{
+		DeliveryID: delivery.ID,
+		OldStatus:  oldStatus,
+		NewStatus:  models.StatusDelivered,
+		ChangedBy:  "driver",
+	}
+	if err := s.statusLogRepo.CreateStatusLog(&statusLog); err != nil {
+		fmt.Printf("Warning: failed to create status log: %v\n", err)
+	}
+
+	if err := s.emailService.SendDeliveredEmail(delivery.ClientEmail, delivery.ID.String()); err != nil {
+		fmt.Printf("Warning: failed to send delivered email: %v\n", err)
+	}
+
+	return nil
+}
+
+// GetAllDeliveries - Get all deliveries
+func (s *deliveryService) GetAllDeliveries() ([]models.DeliveryRequest, error) {
+	deliveries, err := s.deliveryRepo.FindAllDeliveries()
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch deliveries: %w", err)
+	}
+	return deliveries, nil
+}
+
+// GetDeliveryByID - Get delivery by ID
+func (s *deliveryService) GetDeliveryByID(id string) (*models.DeliveryRequest, error) {
+	deliveryID, err := uuid.Parse(id)
+	if err != nil {
+		return nil, fmt.Errorf("invalid delivery ID: %w", err)
+	}
+
+	delivery, err := s.deliveryRepo.FindByID(deliveryID)
+	if err != nil {
+		return nil, fmt.Errorf("delivery not found: %w", err)
+	}
+
+	return delivery, nil
+}
+
+// GetDeliveriesByEmail - Get all deliveries for a client
+func (s *deliveryService) GetDeliveriesByEmail(email string) ([]models.DeliveryRequest, error) {
+	if err := utils.ValidateEmail(email); err != nil {
+		return nil, err
+	}
+
+	deliveries, err := s.deliveryRepo.FindByEmail(email)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch deliveries: %w", err)
+	}
+
+	return deliveries, nil
+}
+
+// GetDeliveriesByStatus - Filter deliveries by status
+func (s *deliveryService) GetDeliveriesByStatus(status string) ([]models.DeliveryRequest, error) {
+	validStatuses := []string{
+		models.StatusRequested,
+		models.StatusPriced,
+		models.StatusDeclined,
+		models.StatusAccepted,
+		models.StatusInProgress,
+		models.StatusDelivered,
+	}
+
+	isValid := false
+	for _, validStatus := range validStatuses {
+		if status == validStatus {
+			isValid = true
+			break
+		}
+	}
+
+	if !isValid {
+		return nil, fmt.Errorf("invalid status: %s", status)
+	}
+
+	deliveries, err := s.deliveryRepo.FindByStatus(status)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch deliveries: %w", err)
+	}
+
+	return deliveries, nil
 }
