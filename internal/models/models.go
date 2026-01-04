@@ -37,7 +37,8 @@ type DeliveryRequest struct {
 	Items           string `gorm:"type:text" json:"items"` // Description of items being delivered
 
 	// Service Details
-	Service string `gorm:"type:varchar(100)" json:"service"` // Service type selected from dropdown
+	Service    string     `gorm:"type:varchar(100)" json:"service"` // Service type selected from dropdown
+	PickupDate *time.Time `gorm:"type:date" json:"pickup_date"`     // Preferred pickup date
 
 	// Delivery Details
 	Price         float64     `gorm:"type:decimal(10,2);default:0.0" json:"price"`

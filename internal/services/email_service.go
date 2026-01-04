@@ -61,17 +61,48 @@ func NewEmailService(emailLogRepo repository.EmailLogInterface) EmailServiceInte
 }
 
 // SendRequestReceivedEmail sends confirmation email when request is created
-func (s *emailService) SendRequestReceivedEmail(clientEmail, clientName, deliveryID string) error {
-	subject := fmt.Sprintf("Delivery Request Received #%s", deliveryID[:8])
+func (s *emailService) SendRequestReceivedEmail(clientEmail, clientName, deliveryID, pickupAddress, dropoffAddress, service, pickupDate string) error {
+	subject := fmt.Sprintf("Delivery Request Received #%s", deliveryID)
 	body := fmt.Sprintf(`
-		<h2>Hello %s,</h2>
-		<p>Thank you for choosing IHB Transport! We have successfully received your delivery request.</p>
-		<p><strong>Delivery ID:</strong> %s</p>
-		<p>We will review your request and send you a price quote shortly.</p>
-		<p>You can track your delivery status at any time using your Delivery ID.</p>
-		<br>
-		<p>Best regards,<br>IHB Transport Team</p>
-	`, clientName, deliveryID[:8])
+		<!DOCTYPE html>
+		<html>
+		<head>
+			<style>
+				body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+				.container { max-width: 600px; margin: 0 auto; padding: 20px; }
+				.header { background-color: #4CAF50; color: white; padding: 20px; text-align: center; }
+				.content { background-color: #f9f9f9; padding: 20px; }
+				.info-box { background-color: white; padding: 15px; margin: 10px 0; border-left: 4px solid #4CAF50; }
+				.footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+			</style>
+		</head>
+		<body>
+			<div class="container">
+				<div class="header">
+					<h1>✅ Request Received</h1>
+				</div>
+				<div class="content">
+					<p>Dear %s,</p>
+					<p>Thank you for choosing IHB Transport! We have received your delivery request.</p>
+					
+					<div class="info-box">
+						<strong>Request ID:</strong> %s<br>
+						<strong>Service:</strong> %s<br>
+						<strong>Pickup Date:</strong> %s<br>
+						<strong>Pickup Location:</strong> %s<br>
+						<strong>Dropoff Location:</strong> %s
+					</div>
+					
+					<p>Our team will review your request and send you a price quote shortly.</p>
+					<p>You will receive another email once we have prepared your quote.</p>
+				</div>
+				<div class="footer">
+					<p>IHB Transport - Reliable Delivery Services</p>
+				</div>
+			</div>
+		</body>
+		</html>
+	`, clientName, deliveryID, service, pickupDate, pickupAddress, dropoffAddress)
 
 	err := s.sendEmail(clientEmail, subject, body)
 	return s.logEmail(deliveryID, clientEmail, "REQUEST_RECEIVED", err)

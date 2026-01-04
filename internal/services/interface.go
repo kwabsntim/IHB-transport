@@ -18,7 +18,7 @@ type DeliveryServiceInterface interface {
 
 // EmailServiceInterface defines email operations
 type EmailServiceInterface interface {
-	SendRequestReceivedEmail(clientEmail, clientName, deliveryID string) error
+	SendRequestReceivedEmail(clientEmail, clientName, deliveryID, pickupAddress, dropoffAddress, service, pickupDate string) error
 	SendPriceEmail(clientEmail string, price float64, deliveryID string) error
 	SendAcceptedEmail(clientEmail, deliveryID string) error
 	SendDeclinedEmail(clientEmail, deliveryID, reason string) error

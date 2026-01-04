@@ -6,6 +6,7 @@ import (
 	"ihb-transport/internal/models"
 	"ihb-transport/internal/services"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -92,6 +93,7 @@ type CreateDeliveryInput struct {
 	ItemDescription string `json:"item_description"`
 	Items           string `json:"items" binding:"required"`
 	Service         string `json:"service" binding:"required"`
+	PickupDate      string `json:"pickup_date" binding:"required"` // Format: YYYY-MM-DD
 }
 
 // CreateDeliveryHandler handles creation of new delivery requests (public)
@@ -99,6 +101,13 @@ func (h *Handler) CreateDeliveryHandler(c *gin.Context) {
 	var input CreateDeliveryInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Parse pickup date
+	pickupDate, err := time.Parse("2006-01-02", input.PickupDate)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid pickup_date format. Use YYYY-MM-DD"})
 		return
 	}
 
@@ -117,6 +126,7 @@ func (h *Handler) CreateDeliveryHandler(c *gin.Context) {
 		ItemDescription: input.ItemDescription,
 		Items:           input.Items,
 		Service:         input.Service,
+		PickupDate:      &pickupDate,
 	}
 
 	// Call service

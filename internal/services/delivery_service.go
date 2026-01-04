@@ -121,7 +121,22 @@ func (s *deliveryService) CreateDeliveryRequest(delivery *models.DeliveryRequest
 	}
 
 	// Send confirmation email to client
-	if err := s.emailService.SendRequestReceivedEmail(delivery.ClientEmail, delivery.ClientName, delivery.ID.String()); err != nil {
+	pickupAddr := fmt.Sprintf("%s, %s, %s, %s", delivery.PickupStreet, delivery.PickupCity, delivery.PickupPostCode, delivery.PickupCountry)
+	dropoffAddr := fmt.Sprintf("%s, %s, %s, %s", delivery.DropoffStreet, delivery.DropoffCity, delivery.DropoffPostCode, delivery.DropoffCountry)
+	pickupDateStr := "Not specified"
+	if delivery.PickupDate != nil {
+		pickupDateStr = delivery.PickupDate.Format("Monday, January 2, 2006")
+	}
+
+	if err := s.emailService.SendRequestReceivedEmail(
+		delivery.ClientEmail,
+		delivery.ClientName,
+		delivery.ID.String(),
+		pickupAddr,
+		dropoffAddr,
+		delivery.Service,
+		pickupDateStr,
+	); err != nil {
 		fmt.Printf("Warning: failed to send request received email: %v\n", err)
 	}
 
