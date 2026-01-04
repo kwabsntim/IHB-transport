@@ -1,0 +1,65 @@
+# Docker Compose for Local Development
+# Use this if you want to run PostgreSQL locally instead of Supabase
+
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: ihb-transport-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: localpassword
+      POSTGRES_DB: ihb_transport
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ihb-transport-api
+    ports:
+      - "8080:8080"
+    environment:
+      # Use individual env vars for Docker Compose
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: localpassword
+      POSTGRES_DB: ihb_transport
+      ADMIN_EMAIL: isaabaidoo@yahoo.com
+      ADMIN_PASSWORD: admin123
+      JWT_SECRET: local-dev-jwt-secret-key
+      PORT: 8080
+      GIN_MODE: debug
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      sh -c "
+        echo '⏳ Waiting for database...' &&
+        sleep 3 &&
+        echo '📊 Running migrations...' &&
+        ./migrate &&
+        echo '🌱 Seeding admin user...' &&
+        ./seed &&
+        echo '🚀 Starting server...' &&
+        ./server
+      "
+
+volumes:
+  postgres_data:
+
+# Usage:
+# 1. Start services: docker-compose up -d
+# 2. View logs: docker-compose logs -f api
+# 3. Stop services: docker-compose down
+# 4. Remove volumes: docker-compose down -v

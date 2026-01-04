@@ -1,0 +1,38 @@
+# Ignore build artifacts
+/server
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Ignore test binaries
+*.test
+*.out
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore log files
+*.log
+server.log
+nohup.out
+
+# Ignore environment files (keep .env.example)
+.env
+
+# Ignore temporary files
+/tmp/
+*.tmp
+
+# Ignore Go build cache
+go.work
+go.work.sum
