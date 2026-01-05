@@ -110,23 +110,53 @@ func (s *emailService) SendRequestReceivedEmail(clientEmail, clientName, deliver
 
 // SendPriceEmail sends email with quoted price
 func (s *emailService) SendPriceEmail(clientEmail string, price float64, deliveryID string) error {
-	subject := fmt.Sprintf("Price Quote for Delivery #%s", deliveryID[:8])
+	subject := fmt.Sprintf("Price Quote for Delivery #%s", deliveryID)
 	body := fmt.Sprintf(`
-		<h2>Your Delivery Quote is Ready!</h2>
-		<p>We're pleased to provide you with a quote for your delivery request.</p>
-		<div style="background-color: #f0f0f0; padding: 20px; margin: 20px 0; border-radius: 5px;">
-			<h3 style="margin: 0;">Delivery ID: %s</h3>
-			<h2 style="margin: 10px 0; color: #007bff;">Price: %.2f DKK</h2>
-		</div>
-		<p>Please review the quote and let us know if you'd like to proceed:</p>
-		<ul>
-			<li><strong>Accept:</strong> Confirm your delivery and we'll get started!</li>
-			<li><strong>Decline:</strong> No problem - let us know if the price doesn't work for you</li>
-		</ul>
-		<p>This quote is valid for 48 hours.</p>
-		<br>
-		<p>Best regards,<br>IHB Transport Team</p>
-	`, deliveryID[:8], price)
+		<!DOCTYPE html>
+		<html>
+		<head>
+			<style>
+				body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+				.container { max-width: 600px; margin: 0 auto; padding: 20px; }
+				.header { background-color: #007bff; color: white; padding: 20px; text-align: center; }
+				.content { background-color: #f9f9f9; padding: 20px; }
+				.price-box { background-color: white; padding: 20px; margin: 20px 0; border-left: 4px solid #007bff; text-align: center; }
+				.button-container { text-align: center; margin: 30px 0; }
+				.button { display: inline-block; padding: 12px 30px; margin: 10px; text-decoration: none; border-radius: 5px; font-weight: bold; }
+				.accept-btn { background-color: #28a745; color: white; }
+				.decline-btn { background-color: #dc3545; color: white; }
+				.footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+			</style>
+		</head>
+		<body>
+			<div class="container">
+				<div class="header">
+					<h1>💰 Your Quote is Ready!</h1>
+				</div>
+				<div class="content">
+					<p>We're pleased to provide you with a quote for your delivery request.</p>
+					
+					<div class="price-box">
+						<p><strong>Delivery ID:</strong> %s</p>
+						<h2 style="margin: 10px 0; color: #007bff;">Price: GH₵ %.2f</h2>
+					</div>
+					
+					<p>Please review the quote and choose an option:</p>
+					
+					<div class="button-container">
+						<a href="http://localhost:8080/api/public/deliveries/%s/accept" class="button accept-btn">✅ Accept Quote</a>
+						<a href="http://localhost:8080/api/public/deliveries/%s/decline" class="button decline-btn">❌ Decline Quote</a>
+					</div>
+					
+					<p style="font-size: 12px; color: #666;">This quote is valid for 48 hours.</p>
+				</div>
+				<div class="footer">
+					<p>IHB Transport - Reliable Delivery Services</p>
+				</div>
+			</div>
+		</body>
+		</html>
+	`, deliveryID, price, deliveryID, deliveryID)
 
 	err := s.sendEmail(clientEmail, subject, body)
 	return s.logEmail(deliveryID, clientEmail, "PRICE_SENT", err)
@@ -134,7 +164,7 @@ func (s *emailService) SendPriceEmail(clientEmail string, price float64, deliver
 
 // SendAcceptedEmail notifies that client accepted the price
 func (s *emailService) SendAcceptedEmail(clientEmail, deliveryID string) error {
-	subject := fmt.Sprintf("Delivery Confirmed #%s", deliveryID[:8])
+	subject := fmt.Sprintf("Delivery Confirmed #%s", deliveryID)
 	body := fmt.Sprintf(`
 		<h2>🎉 Your Delivery is Confirmed!</h2>
 		<p>Thank you for accepting our quote! Your delivery has been confirmed and scheduled.</p>
@@ -148,7 +178,7 @@ func (s *emailService) SendAcceptedEmail(clientEmail, deliveryID string) error {
 		<p>We'll send you notifications as your delivery progresses.</p>
 		<br>
 		<p>Thank you for choosing IHB Transport!<br>IHB Transport Team</p>
-	`, deliveryID[:8])
+	`, deliveryID)
 
 	err := s.sendEmail(clientEmail, subject, body)
 	return s.logEmail(deliveryID, clientEmail, "ACCEPTED", err)
@@ -159,19 +189,19 @@ func (s *emailService) SendDeclinedEmail(clientEmail, deliveryID, reason string)
 	// Send notification to admin
 	adminEmail := os.Getenv("ADMIN_EMAIL")
 	if adminEmail != "" {
-		adminSubject := fmt.Sprintf("Price Declined - Delivery #%s", deliveryID[:8])
+		adminSubject := fmt.Sprintf("Price Declined - Delivery #%s", deliveryID)
 		adminBody := fmt.Sprintf(`
 			<h2>Price Declined by Client</h2>
 			<p><strong>Delivery ID:</strong> %s</p>
 			<p><strong>Client Email:</strong> %s</p>
 			<p><strong>Decline Reason:</strong> %s</p>
 			<p>You may want to follow up with the client with a revised quote.</p>
-		`, deliveryID[:8], clientEmail, reason)
+		`, deliveryID, clientEmail, reason)
 		s.sendEmail(adminEmail, adminSubject, adminBody)
 	}
 
 	// Send confirmation to client
-	subject := fmt.Sprintf("Delivery Request Declined #%s", deliveryID[:8])
+	subject := fmt.Sprintf("Delivery Request Declined #%s", deliveryID)
 	body := fmt.Sprintf(`
 		<h2>Request Declined</h2>
 		<p>We've received your decision to decline the delivery quote.</p>
@@ -181,7 +211,7 @@ func (s *emailService) SendDeclinedEmail(clientEmail, deliveryID, reason string)
 		<p>We hope to serve you in the future!</p>
 		<br>
 		<p>Best regards,<br>IHB Transport Team</p>
-	`, deliveryID[:8])
+	`, deliveryID)
 
 	err := s.sendEmail(clientEmail, subject, body)
 	return s.logEmail(deliveryID, clientEmail, "PRICE_DECLINED", err)
@@ -189,7 +219,7 @@ func (s *emailService) SendDeclinedEmail(clientEmail, deliveryID, reason string)
 
 // SendDriverOnWayEmail notifies that driver picked up the package
 func (s *emailService) SendDriverOnWayEmail(clientEmail, deliveryID string) error {
-	subject := fmt.Sprintf("🚚 Driver En Route - Delivery #%s", deliveryID[:8])
+	subject := fmt.Sprintf("🚚 Driver En Route - Delivery #%s", deliveryID)
 	body := fmt.Sprintf(`
 		<h2>📦 Great News - Your Package is On the Way!</h2>
 		<p>Our driver has successfully picked up your package and is now en route to the delivery location.</p>
@@ -199,7 +229,7 @@ func (s *emailService) SendDriverOnWayEmail(clientEmail, deliveryID string) erro
 		<p>Thank you for your patience!</p>
 		<br>
 		<p>Best regards,<br>IHB Transport Team</p>
-	`, deliveryID[:8])
+	`, deliveryID)
 
 	err := s.sendEmail(clientEmail, subject, body)
 	return s.logEmail(deliveryID, clientEmail, "DRIVER_ON_WAY", err)
@@ -207,7 +237,7 @@ func (s *emailService) SendDriverOnWayEmail(clientEmail, deliveryID string) erro
 
 // SendDeliveredEmail sends completion confirmation
 func (s *emailService) SendDeliveredEmail(clientEmail, deliveryID string) error {
-	subject := fmt.Sprintf("✅ Delivery Completed #%s", deliveryID[:8])
+	subject := fmt.Sprintf("✅ Delivery Completed #%s", deliveryID)
 	body := fmt.Sprintf(`
 		<h2>🎉 Delivery Complete!</h2>
 		<p>Your package has been successfully delivered!</p>
@@ -220,7 +250,7 @@ func (s *emailService) SendDeliveredEmail(clientEmail, deliveryID string) error 
 		<p>If you have any questions or feedback, please don't hesitate to contact us.</p>
 		<br>
 		<p>Best regards,<br>IHB Transport Team</p>
-	`, deliveryID[:8])
+	`, deliveryID)
 
 	err := s.sendEmail(clientEmail, subject, body)
 	return s.logEmail(deliveryID, clientEmail, "DELIVERED", err)

@@ -166,7 +166,7 @@ func (h *Handler) SetDeliveryPriceHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Price set successfully"})
 }
 
-// AcceptDeliveryPriceHandler handles client accepting the price
+// AcceptDeliveryPriceHandler handles client accepting the price (POST - JSON response)
 func (h *Handler) AcceptDeliveryPriceHandler(c *gin.Context) {
 	deliveryID := c.Param("id")
 
@@ -178,12 +178,72 @@ func (h *Handler) AcceptDeliveryPriceHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Delivery price accepted successfully"})
 }
 
+// AcceptDeliveryPriceHandlerGET handles client accepting the price from email link (GET - HTML response)
+func (h *Handler) AcceptDeliveryPriceHandlerGET(c *gin.Context) {
+	deliveryID := c.Param("id")
+
+	if err := h.deliveryService.AcceptDeliveryPrice(deliveryID); err != nil {
+		c.Data(http.StatusBadRequest, "text/html; charset=utf-8", []byte(`
+			<!DOCTYPE html>
+			<html>
+			<head>
+				<title>Error - IHB Transport</title>
+				<style>
+					body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f5f5f5; }
+					.container { text-align: center; padding: 40px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 500px; }
+					.error-icon { font-size: 60px; margin-bottom: 20px; }
+					h1 { color: #dc3545; margin-bottom: 20px; }
+					p { color: #666; line-height: 1.6; }
+				</style>
+			</head>
+			<body>
+				<div class="container">
+					<div class="error-icon">❌</div>
+					<h1>Unable to Accept Quote</h1>
+					<p>`+err.Error()+`</p>
+					<p style="margin-top: 30px; font-size: 14px; color: #999;">If you need assistance, please contact IHB Transport support.</p>
+				</div>
+			</body>
+			</html>
+		`))
+		return
+	}
+
+	c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(`
+		<!DOCTYPE html>
+		<html>
+		<head>
+			<title>Quote Accepted - IHB Transport</title>
+			<style>
+				body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f5f5f5; }
+				.container { text-align: center; padding: 40px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 500px; }
+				.success-icon { font-size: 60px; margin-bottom: 20px; }
+				h1 { color: #28a745; margin-bottom: 20px; }
+				p { color: #666; line-height: 1.6; }
+				.delivery-id { background: #e7f3ff; padding: 10px; border-radius: 5px; margin: 20px 0; font-family: monospace; }
+			</style>
+		</head>
+		<body>
+			<div class="container">
+				<div class="success-icon">✅</div>
+				<h1>Quote Accepted Successfully!</h1>
+				<p>Thank you for accepting our quote. We've received your confirmation.</p>
+				<div class="delivery-id">Delivery ID: `+deliveryID+`</div>
+				<p><strong>What happens next?</strong></p>
+				<p>Our team will review your acceptance and assign a driver shortly. You'll receive an email confirmation once a driver is on the way.</p>
+				<p style="margin-top: 30px; font-size: 14px; color: #999;">You can close this window now.</p>
+			</div>
+		</body>
+		</html>
+	`))
+}
+
 // DeclineInput defines the input for declining delivery price
 type DeclineInput struct {
 	Reason string `json:"reason" binding:"required"`
 }
 
-// DeclineDeliveryPriceHandler handles client declining the price
+// DeclineDeliveryPriceHandler handles client declining the price (POST - JSON response)
 func (h *Handler) DeclineDeliveryPriceHandler(c *gin.Context) {
 	deliveryID := c.Param("id")
 
@@ -199,6 +259,70 @@ func (h *Handler) DeclineDeliveryPriceHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Delivery price declined"})
+}
+
+// DeclineDeliveryPriceHandlerGET handles client declining the price from email link (GET - HTML response)
+func (h *Handler) DeclineDeliveryPriceHandlerGET(c *gin.Context) {
+	deliveryID := c.Param("id")
+	reason := c.Query("reason") // Optional reason from query parameter
+
+	if reason == "" {
+		reason = "No reason provided"
+	}
+
+	if err := h.deliveryService.DeclineDeliveryPrice(deliveryID, reason); err != nil {
+		c.Data(http.StatusBadRequest, "text/html; charset=utf-8", []byte(`
+			<!DOCTYPE html>
+			<html>
+			<head>
+				<title>Error - IHB Transport</title>
+				<style>
+					body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f5f5f5; }
+					.container { text-align: center; padding: 40px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 500px; }
+					.error-icon { font-size: 60px; margin-bottom: 20px; }
+					h1 { color: #dc3545; margin-bottom: 20px; }
+					p { color: #666; line-height: 1.6; }
+				</style>
+			</head>
+			<body>
+				<div class="container">
+					<div class="error-icon">❌</div>
+					<h1>Unable to Decline Quote</h1>
+					<p>`+err.Error()+`</p>
+					<p style="margin-top: 30px; font-size: 14px; color: #999;">If you need assistance, please contact IHB Transport support.</p>
+				</div>
+			</body>
+			</html>
+		`))
+		return
+	}
+
+	c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(`
+		<!DOCTYPE html>
+		<html>
+		<head>
+			<title>Quote Declined - IHB Transport</title>
+			<style>
+				body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f5f5f5; }
+				.container { text-align: center; padding: 40px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 500px; }
+				.info-icon { font-size: 60px; margin-bottom: 20px; }
+				h1 { color: #666; margin-bottom: 20px; }
+				p { color: #666; line-height: 1.6; }
+				.delivery-id { background: #f8f9fa; padding: 10px; border-radius: 5px; margin: 20px 0; font-family: monospace; }
+			</style>
+		</head>
+		<body>
+			<div class="container">
+				<div class="info-icon">📋</div>
+				<h1>Quote Declined</h1>
+				<p>We've received your decision to decline the quote.</p>
+				<div class="delivery-id">Delivery ID: `+deliveryID+`</div>
+				<p>Thank you for considering IHB Transport. If you'd like to discuss alternative options or have questions about the quote, please feel free to contact us.</p>
+				<p style="margin-top: 30px; font-size: 14px; color: #999;">You can close this window now.</p>
+			</div>
+		</body>
+		</html>
+	`))
 }
 
 // MarkAsPickedUpHandler handles driver marking delivery as picked up
