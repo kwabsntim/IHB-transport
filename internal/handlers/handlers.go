@@ -187,21 +187,30 @@ func (h *Handler) AcceptDeliveryPriceHandlerGET(c *gin.Context) {
 			<!DOCTYPE html>
 			<html>
 			<head>
-				<title>Error - IHB Transport</title>
+				<title>Cannot Accept Quote - IHB Transport</title>
+				<meta name="viewport" content="width=device-width, initial-scale=1.0">
 				<style>
-					body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f5f5f5; }
-					.container { text-align: center; padding: 40px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 500px; }
+					body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background-color: #f5f5f5; padding: 20px; }
+					.container { text-align: center; padding: 40px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 500px; width: 100%; }
 					.error-icon { font-size: 60px; margin-bottom: 20px; }
-					h1 { color: #dc3545; margin-bottom: 20px; }
+					h1 { color: #dc3545; margin-bottom: 20px; font-size: 24px; }
+					.error-message { color: #333; line-height: 1.6; background: #f8d7da; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #dc3545; }
 					p { color: #666; line-height: 1.6; }
+					.delivery-id { background: #f8f9fa; padding: 10px; border-radius: 5px; margin: 15px 0; font-family: monospace; font-size: 12px; word-break: break-all; }
+					.contact-box { background: #e7f3ff; padding: 15px; border-radius: 5px; margin-top: 20px; }
 				</style>
 			</head>
 			<body>
 				<div class="container">
-					<div class="error-icon">❌</div>
-					<h1>Unable to Accept Quote</h1>
-					<p>`+err.Error()+`</p>
-					<p style="margin-top: 30px; font-size: 14px; color: #999;">If you need assistance, please contact IHB Transport support.</p>
+					<div class="error-icon">⚠️</div>
+					<h1>Cannot Accept Quote</h1>
+					<div class="error-message">`+err.Error()+`</div>
+					<div class="delivery-id">Delivery ID: `+deliveryID+`</div>
+					<div class="contact-box">
+						<p style="margin: 0; font-weight: bold; color: #0056b3;">Need Help?</p>
+						<p style="margin: 5px 0 0 0; font-size: 14px;">Contact IHB Transport support for assistance with this delivery.</p>
+					</div>
+					<p style="margin-top: 20px; font-size: 12px; color: #999;">You can close this window now.</p>
 				</div>
 			</body>
 			</html>
@@ -275,21 +284,30 @@ func (h *Handler) DeclineDeliveryPriceHandlerGET(c *gin.Context) {
 			<!DOCTYPE html>
 			<html>
 			<head>
-				<title>Error - IHB Transport</title>
+				<title>Cannot Decline Quote - IHB Transport</title>
+				<meta name="viewport" content="width=device-width, initial-scale=1.0">
 				<style>
-					body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f5f5f5; }
-					.container { text-align: center; padding: 40px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 500px; }
+					body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background-color: #f5f5f5; padding: 20px; }
+					.container { text-align: center; padding: 40px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 500px; width: 100%; }
 					.error-icon { font-size: 60px; margin-bottom: 20px; }
-					h1 { color: #dc3545; margin-bottom: 20px; }
+					h1 { color: #dc3545; margin-bottom: 20px; font-size: 24px; }
+					.error-message { color: #333; line-height: 1.6; background: #f8d7da; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #dc3545; }
 					p { color: #666; line-height: 1.6; }
+					.delivery-id { background: #f8f9fa; padding: 10px; border-radius: 5px; margin: 15px 0; font-family: monospace; font-size: 12px; word-break: break-all; }
+					.contact-box { background: #e7f3ff; padding: 15px; border-radius: 5px; margin-top: 20px; }
 				</style>
 			</head>
 			<body>
 				<div class="container">
-					<div class="error-icon">❌</div>
-					<h1>Unable to Decline Quote</h1>
-					<p>`+err.Error()+`</p>
-					<p style="margin-top: 30px; font-size: 14px; color: #999;">If you need assistance, please contact IHB Transport support.</p>
+					<div class="error-icon">⚠️</div>
+					<h1>Cannot Decline Quote</h1>
+					<div class="error-message">`+err.Error()+`</div>
+					<div class="delivery-id">Delivery ID: `+deliveryID+`</div>
+					<div class="contact-box">
+						<p style="margin: 0; font-weight: bold; color: #0056b3;">Need Help?</p>
+						<p style="margin: 5px 0 0 0; font-size: 14px;">Contact IHB Transport support for assistance with this delivery.</p>
+					</div>
+					<p style="margin-top: 20px; font-size: 12px; color: #999;">You can close this window now.</p>
 				</div>
 			</body>
 			</html>

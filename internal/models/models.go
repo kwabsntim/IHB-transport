@@ -81,4 +81,5 @@ const (
 	StatusAccepted   = "ACCEPTED"
 	StatusInProgress = "IN_PROGRESS"
 	StatusDelivered  = "DELIVERED"
+	StatusPending    = "PENDING"
 )

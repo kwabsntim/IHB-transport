@@ -202,7 +202,21 @@ func (s *deliveryService) DeclineDeliveryPrice(id string, reason string) error {
 
 	// Step 3: Validate status (must be PRICED)
 	if delivery.Status != models.StatusPriced {
-		return fmt.Errorf("can only decline PRICED deliveries, current status: %s", delivery.Status)
+		// Provide user-friendly error messages based on current status
+		switch delivery.Status {
+		case models.StatusAccepted:
+			return fmt.Errorf("this quote has already been accepted and cannot be declined")
+		case models.StatusDeclined:
+			return fmt.Errorf("this quote has already been declined")
+		case models.StatusInProgress:
+			return fmt.Errorf("this delivery has already been picked up and cannot be declined")
+		case models.StatusDelivered:
+			return fmt.Errorf("this delivery has already been completed")
+		case models.StatusPending:
+			return fmt.Errorf("no price has been set for this delivery yet")
+		default:
+			return fmt.Errorf("cannot decline delivery in current status: %s", delivery.Status)
+		}
 	}
 
 	// Step 4: Validate reason is provided
@@ -252,8 +266,23 @@ func (s *deliveryService) AcceptDeliveryPrice(id string) error {
 		return fmt.Errorf("delivery not found: %w", err)
 	}
 
+	// Validate status (must be PRICED)
 	if delivery.Status != models.StatusPriced {
-		return fmt.Errorf("can only accept PRICED deliveries, current status: %s", delivery.Status)
+		// Provide user-friendly error messages based on current status
+		switch delivery.Status {
+		case models.StatusAccepted:
+			return fmt.Errorf("this quote has already been accepted")
+		case models.StatusDeclined:
+			return fmt.Errorf("this quote has already been declined and cannot be accepted")
+		case models.StatusInProgress:
+			return fmt.Errorf("this delivery has already been picked up")
+		case models.StatusDelivered:
+			return fmt.Errorf("this delivery has already been completed")
+		case models.StatusPending:
+			return fmt.Errorf("no price has been set for this delivery yet")
+		default:
+			return fmt.Errorf("cannot accept delivery in current status: %s", delivery.Status)
+		}
 	}
 
 	oldStatus := delivery.Status

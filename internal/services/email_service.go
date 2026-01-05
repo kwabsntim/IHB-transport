@@ -138,7 +138,7 @@ func (s *emailService) SendPriceEmail(clientEmail string, price float64, deliver
 					
 					<div class="price-box">
 						<p><strong>Delivery ID:</strong> %s</p>
-						<h2 style="margin: 10px 0; color: #007bff;">Price: GH₵ %.2f</h2>
+						<h2 style="margin: 10px 0; color: #007bff;">Price: %.2f DKK</h2>
 					</div>
 					
 					<p>Please review the quote and choose an option:</p>
