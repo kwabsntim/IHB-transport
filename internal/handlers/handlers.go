@@ -92,6 +92,7 @@ type CreateDeliveryInput struct {
 
 	ItemDescription string `json:"item_description"`
 	Items           string `json:"items" binding:"required"`
+	Weight          string `json:"weight"`
 	Service         string `json:"service" binding:"required"`
 	PickupDate      string `json:"pickup_date" binding:"required"` // Format: YYYY-MM-DD
 }
@@ -125,6 +126,7 @@ func (h *Handler) CreateDeliveryHandler(c *gin.Context) {
 		DropoffCountry:  input.DropoffCountry,
 		ItemDescription: input.ItemDescription,
 		Items:           input.Items,
+		Weight:          input.Weight,
 		Service:         input.Service,
 		PickupDate:      &pickupDate,
 	}

@@ -34,7 +34,8 @@ type DeliveryRequest struct {
 
 	// Item Details
 	ItemDescription string `gorm:"type:varchar(255)" json:"item_description"`
-	Items           string `gorm:"type:text" json:"items"` // Description of items being delivered
+	Items           string `gorm:"type:text" json:"items"`         // Description of items being delivered
+	Weight          string `gorm:"type:varchar(50)" json:"weight"` // Weight of items (e.g., "5kg", "10 pounds")
 
 	// Service Details
 	Service    string     `gorm:"type:varchar(100)" json:"service"` // Service type selected from dropdown
