@@ -30,9 +30,6 @@ WORKDIR /root/
 # Copy the binary from builder
 COPY --from=builder /app/server .
 
-# Copy .env file (optional, use environment variables instead in production)
-COPY .env .env
-
 # Expose port
 EXPOSE 8080
 
