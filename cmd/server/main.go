@@ -16,10 +16,8 @@ import (
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error loading .env file")
-	}
+	// Load .env file if it exists (optional for production)
+	_ = godotenv.Load() // Ignore error - .env is optional in production
 
 	// Connect to Postgres
 	database.Connection()
