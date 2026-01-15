@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-
+	"strings"
 	"time"
 
 	"gorm.io/driver/postgres"
@@ -32,6 +32,27 @@ func Connection() {
 	if databaseURL != "" {
 		// Use full connection string (Supabase, Railway, etc.)
 		dsn = databaseURL
+
+		// For Supabase: Ensure SSL is required and add connection parameters
+		if contains(dsn, "supabase") {
+			// Add SSL mode if not present
+			if !contains(dsn, "sslmode=") {
+				separator := "?"
+				if strings.Contains(dsn, "?") {
+					separator = "&"
+				}
+				dsn += separator + "sslmode=require"
+			}
+			// Force IPv4 and add connection timeout
+			if !contains(dsn, "connect_timeout=") {
+				separator := "?"
+				if strings.Contains(dsn, "?") {
+					separator = "&"
+				}
+				dsn += separator + "connect_timeout=10"
+			}
+		}
+
 		log.Println("📡 Using DATABASE_URL connection string")
 	} else {
 		// Fallback to individual environment variables for local development
@@ -67,4 +88,9 @@ func Connection() {
 	DB = db
 	log.Printf("Connection to Postgres successfully")
 
+}
+
+// Helper function to check if string contains substring (case-insensitive)
+func contains(s, substr string) bool {
+	return strings.Contains(strings.ToLower(s), strings.ToLower(substr))
 }
