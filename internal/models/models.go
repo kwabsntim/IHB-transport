@@ -51,7 +51,7 @@ type DeliveryRequest struct {
 	StatusLogs    []StatusLog `gorm:"foreignKey:DeliveryID" json:"status_logs,omitempty"`
 	EmailLogs     []EmailLog  `gorm:"foreignKey:DeliveryID" json:"email_logs,omitempty"`
 }
-
+ 
 // status log model
 type StatusLog struct {
 	ID         uuid.UUID `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`

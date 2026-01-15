@@ -19,6 +19,7 @@ type emailService struct {
 	smtpPassword string
 	fromEmail    string
 	fromName     string
+	baseURL      string
 	enabled      bool
 }
 
@@ -47,6 +48,12 @@ func NewEmailService(emailLogRepo repository.EmailLogInterface) EmailServiceInte
 	if fromName == "" {
 		fromName = "IHB Transport"
 	}
+	
+	// Get base URL for email links (defaults to localhost for development)
+	baseURL := os.Getenv("API_BASE_URL")
+	if baseURL == "" {
+		baseURL = "http://localhost:8080"
+	}
 
 	return &emailService{
 		emailLogRepo: emailLogRepo,
@@ -56,6 +63,7 @@ func NewEmailService(emailLogRepo repository.EmailLogInterface) EmailServiceInte
 		smtpPassword: smtpPassword,
 		fromEmail:    fromEmail,
 		fromName:     fromName,
+		baseURL:      baseURL,
 		enabled:      enabled,
 	}
 }
@@ -144,8 +152,8 @@ func (s *emailService) SendPriceEmail(clientEmail string, price float64, deliver
 					<p>Please review the quote and choose an option:</p>
 					
 					<div class="button-container">
-						<a href="http://localhost:8080/api/public/deliveries/%s/accept" class="button accept-btn">✅ Accept Quote</a>
-						<a href="http://localhost:8080/api/public/deliveries/%s/decline" class="button decline-btn">❌ Decline Quote</a>
+						<a href="%s/api/public/deliveries/%s/accept" class="button accept-btn">✅ Accept Quote</a>
+						<a href="%s/api/public/deliveries/%s/decline" class="button decline-btn">❌ Decline Quote</a>
 					</div>
 					
 					<p style="font-size: 12px; color: #666;">This quote is valid for 48 hours.</p>
@@ -156,7 +164,7 @@ func (s *emailService) SendPriceEmail(clientEmail string, price float64, deliver
 			</div>
 		</body>
 		</html>
-	`, deliveryID, price, deliveryID, deliveryID)
+	`, deliveryID, price, s.baseURL, deliveryID, s.baseURL, deliveryID)
 
 	err := s.sendEmail(clientEmail, subject, body)
 	return s.logEmail(deliveryID, clientEmail, "PRICE_SENT", err)

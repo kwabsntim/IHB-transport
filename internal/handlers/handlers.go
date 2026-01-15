@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"html"
 	"ihb-transport/internal/auth"
 	"ihb-transport/internal/database"
 	"ihb-transport/internal/models"
@@ -131,7 +132,7 @@ func (h *Handler) CreateDeliveryHandler(c *gin.Context) {
 		PickupDate:      &pickupDate,
 	}
 
-	// Call service 
+	// Call service
 	if err := h.deliveryService.CreateDeliveryRequest(&delivery); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -181,8 +182,12 @@ func (h *Handler) AcceptDeliveryPriceHandler(c *gin.Context) {
 // AcceptDeliveryPriceHandlerGET handles client accepting the price from email link (GET - HTML response)
 func (h *Handler) AcceptDeliveryPriceHandlerGET(c *gin.Context) {
 	deliveryID := c.Param("id")
+	// Escape deliveryID to prevent XSS
+	escapedDeliveryID := html.EscapeString(deliveryID)
 
 	if err := h.deliveryService.AcceptDeliveryPrice(deliveryID); err != nil {
+		// Escape error message to prevent XSS
+		escapedError := html.EscapeString(err.Error())
 		c.Data(http.StatusBadRequest, "text/html; charset=utf-8", []byte(`
 			<!DOCTYPE html>
 			<html>
@@ -204,8 +209,8 @@ func (h *Handler) AcceptDeliveryPriceHandlerGET(c *gin.Context) {
 				<div class="container">
 					<div class="error-icon">⚠️</div>
 					<h1>Cannot Accept Quote</h1>
-					<div class="error-message">`+err.Error()+`</div>
-					<div class="delivery-id">Delivery ID: `+deliveryID+`</div>
+					<div class="error-message">`+escapedError+`</div>
+					<div class="delivery-id">Delivery ID: `+escapedDeliveryID+`</div>
 					<div class="contact-box">
 						<p style="margin: 0; font-weight: bold; color: #0056b3;">Need Help?</p>
 						<p style="margin: 5px 0 0 0; font-size: 14px;">Contact IHB Transport support for assistance with this delivery.</p>
@@ -237,7 +242,7 @@ func (h *Handler) AcceptDeliveryPriceHandlerGET(c *gin.Context) {
 				<div class="success-icon">✅</div>
 				<h1>Quote Accepted Successfully!</h1>
 				<p>Thank you for accepting our quote. We've received your confirmation.</p>
-				<div class="delivery-id">Delivery ID: `+deliveryID+`</div>
+				<div class="delivery-id">Delivery ID: `+escapedDeliveryID+`</div>
 				<p><strong>What happens next?</strong></p>
 				<p>Our team will review your acceptance and assign a driver shortly. You'll receive an email confirmation once a driver is on the way.</p>
 				<p style="margin-top: 30px; font-size: 14px; color: #999;">You can close this window now.</p>
@@ -273,13 +278,22 @@ func (h *Handler) DeclineDeliveryPriceHandler(c *gin.Context) {
 // DeclineDeliveryPriceHandlerGET handles client declining the price from email link (GET - HTML response)
 func (h *Handler) DeclineDeliveryPriceHandlerGET(c *gin.Context) {
 	deliveryID := c.Param("id")
+	// Escape deliveryID to prevent XSS
+	escapedDeliveryID := html.EscapeString(deliveryID)
+
 	reason := c.Query("reason") // Optional reason from query parameter
+	// Sanitize and limit reason length to prevent abuse
+	if len(reason) > 500 {
+		reason = reason[:500]
+	}
 
 	if reason == "" {
 		reason = "No reason provided"
 	}
 
 	if err := h.deliveryService.DeclineDeliveryPrice(deliveryID, reason); err != nil {
+		// Escape error message to prevent XSS
+		escapedError := html.EscapeString(err.Error())
 		c.Data(http.StatusBadRequest, "text/html; charset=utf-8", []byte(`
 			<!DOCTYPE html>
 			<html>
@@ -301,8 +315,8 @@ func (h *Handler) DeclineDeliveryPriceHandlerGET(c *gin.Context) {
 				<div class="container">
 					<div class="error-icon">⚠️</div>
 					<h1>Cannot Decline Quote</h1>
-					<div class="error-message">`+err.Error()+`</div>
-					<div class="delivery-id">Delivery ID: `+deliveryID+`</div>
+					<div class="error-message">`+escapedError+`</div>
+					<div class="delivery-id">Delivery ID: `+escapedDeliveryID+`</div>
 					<div class="contact-box">
 						<p style="margin: 0; font-weight: bold; color: #0056b3;">Need Help?</p>
 						<p style="margin: 5px 0 0 0; font-size: 14px;">Contact IHB Transport support for assistance with this delivery.</p>
@@ -334,7 +348,7 @@ func (h *Handler) DeclineDeliveryPriceHandlerGET(c *gin.Context) {
 				<div class="info-icon">📋</div>
 				<h1>Quote Declined</h1>
 				<p>We've received your decision to decline the quote.</p>
-				<div class="delivery-id">Delivery ID: `+deliveryID+`</div>
+				<div class="delivery-id">Delivery ID: `+escapedDeliveryID+`</div>
 				<p>Thank you for considering IHB Transport. If you'd like to discuss alternative options or have questions about the quote, please feel free to contact us.</p>
 				<p style="margin-top: 30px; font-size: 14px; color: #999;">You can close this window now.</p>
 			</div>
