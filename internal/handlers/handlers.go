@@ -282,9 +282,9 @@ func (h *Handler) DeclineDeliveryPriceHandlerGET(c *gin.Context) {
 	escapedDeliveryID := html.EscapeString(deliveryID)
 
 	reason := c.Query("reason") // Optional reason from query parameter
-	// Sanitize and limit reason length to prevent abuse
-	if len(reason) > 500 {
-		reason = reason[:500]
+	// Sanitize and limit reason length to prevent abuse (matches service layer validation)
+	if len(reason) > 1000 {
+		reason = reason[:1000]
 	}
 
 	if reason == "" {
