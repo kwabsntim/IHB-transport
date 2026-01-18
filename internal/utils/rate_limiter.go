@@ -5,7 +5,10 @@ import (
 	"sync"
 	"time"
 )
-
+type RateLimiter struct{
+	tokens chan struct{}
+	refillTicker *time.Ticker
+}
 // EmailRateLimiter manages email sending rate limits
 type EmailRateLimiter struct {
 	mu                sync.Mutex
@@ -102,3 +105,4 @@ func (rl *EmailRateLimiter) SetClientDailyLimit(newLimit int) {
 	rl.clientDailyLimit = newLimit
 	fmt.Printf("📊 Per-client daily limit updated to: %d\n", newLimit)
 }
+
