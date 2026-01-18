@@ -48,7 +48,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Extract user ID from claims
+		// Extract user ID from claims for the most individual
 		userID, ok := (*claims)["email"].(string)
 		if !ok {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
@@ -94,4 +94,7 @@ func RoleMiddleware(requiredRole string) gin.HandlerFunc {
 		// Continue to next middleware/handler
 		c.Next()
 	}
+}
+func AuthRateLimiter(){
+	return 
 }
