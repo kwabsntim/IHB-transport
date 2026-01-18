@@ -41,6 +41,13 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		// Safety check: ensure claims is not nil
+		if claims == nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
+			c.Abort()
+			return
+		}
+
 		// Extract user ID from claims for the most individual
 		userID, ok := (*claims)["email"].(string)
 		if !ok {
@@ -67,7 +74,7 @@ func AuthMiddleware() gin.HandlerFunc {
 }
 
 // the middleware that extracts the role of the user from the response
-func RoleMiddleware(role string) gin.HandlerFunc {
+func RoleMiddleware(requiredRole string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Get role from context (set by AuthMiddleware)
 		role, exists := c.Get("role")
@@ -78,7 +85,7 @@ func RoleMiddleware(role string) gin.HandlerFunc {
 		}
 
 		roleStr, ok := role.(string)
-		if !ok || roleStr != "admin" {
+		if !ok || roleStr != requiredRole {
 			c.JSON(http.StatusForbidden, gin.H{"error": "You cannot access this resource"})
 			c.Abort()
 			return

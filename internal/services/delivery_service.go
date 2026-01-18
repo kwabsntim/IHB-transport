@@ -219,9 +219,13 @@ func (s *deliveryService) DeclineDeliveryPrice(id string, reason string) error {
 		}
 	}
 
-	// Step 4: Validate reason is provided
+	// Step 4: Validate reason is provided and has reasonable length
 	if reason == "" {
 		return fmt.Errorf("decline reason is required")
+	}
+	// Limit reason length to prevent abuse (database field is text, but we limit to 1000 chars)
+	if len(reason) > 1000 {
+		return fmt.Errorf("decline reason cannot exceed 1000 characters")
 	}
 
 	// Step 5: Update delivery with decline info

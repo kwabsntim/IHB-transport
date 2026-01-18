@@ -22,7 +22,7 @@ func NewDeliveryRepository() DeliveryInterface {
 // create a delivery
 func (r *deliveryRepository) CreateDelivery(delivery *models.DeliveryRequest) error {
 	if err := r.db.Create(delivery).Error; err != nil {
-		log.Fatalf("Could not create delivery")
+		log.Printf("Error creating delivery: %v", err)
 		return err
 	}
 	return nil
@@ -92,7 +92,7 @@ func (r *deliveryRepository) FindByEmail(email string) ([]models.DeliveryRequest
 // update the contents of a delivery
 func (r *deliveryRepository) UpdateDelivery(delivery *models.DeliveryRequest) error {
 	if err := r.db.Save(delivery).Error; err != nil {
-		log.Fatalf("Could not update delivery")
+		log.Printf("Error updating delivery: %v", err)
 		return err
 	}
 	return nil

@@ -2,6 +2,7 @@ package utils
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -34,7 +35,7 @@ func ValidateRequired(fieldName, value string) error {
 // ValidateMinLength checks if value meets minimum length
 func ValidateMinLength(fieldName, value string, minLength int) error {
 	if len(strings.TrimSpace(value)) < minLength {
-		return errors.New(fieldName + " must be at least " + string(rune(minLength)) + " characters")
+		return errors.New(fieldName + " must be at least " + fmt.Sprintf("%d", minLength) + " characters")
 	}
 	return nil
 }
@@ -42,7 +43,7 @@ func ValidateMinLength(fieldName, value string, minLength int) error {
 // ValidateMaxLength checks if value doesn't exceed maximum length
 func ValidateMaxLength(fieldName, value string, maxLength int) error {
 	if len(value) > maxLength {
-		return errors.New(fieldName + " cannot exceed " + string(rune(maxLength)) + " characters")
+		return errors.New(fieldName + " cannot exceed " + fmt.Sprintf("%d", maxLength) + " characters")
 	}
 	return nil
 }
