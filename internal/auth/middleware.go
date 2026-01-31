@@ -95,6 +95,3 @@ func RoleMiddleware(requiredRole string) gin.HandlerFunc {
 		c.Next()
 	}
 }
-func AuthRateLimiter(){
-	return 
-}

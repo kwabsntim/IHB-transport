@@ -27,6 +27,13 @@ func (r *deliveryRepository) CreateDelivery(delivery *models.DeliveryRequest) er
 	}
 	return nil
 }
+func (r *deliveryRepository) GetInstantQuote(InstantQuote *models.InstantQuote) error {
+	if err := r.db.Create(InstantQuote).Error; err != nil {
+		log.Printf("Error creating instant quote: %v", err)
+		return err
+	}
+	return nil
+}
 
 // get all the deliveries
 
