@@ -15,6 +15,8 @@ func Migrate() {
 		&models.StatusLog{},
 		&models.EmailLog{},
 		&models.Admin{},
+		&models.InstantQuote{},
+		&models.Reviews{},
 	)
 
 	if err != nil {

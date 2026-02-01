@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"html"
 	"ihb-transport/internal/auth"
 	"ihb-transport/internal/database"
 	"ihb-transport/internal/models"
@@ -15,12 +14,14 @@ import (
 // Handler holds all service dependencies
 type Handler struct {
 	deliveryService services.DeliveryServiceInterface
+	reviewService   services.ReviewServiceInterface
 }
 
 // NewHandler creates a new handler with service dependencies
-func NewHandler(deliveryService services.DeliveryServiceInterface) *Handler {
+func NewHandler(deliveryService services.DeliveryServiceInterface, reviewService services.ReviewServiceInterface) *Handler {
 	return &Handler{
 		deliveryService: deliveryService,
+		reviewService:   reviewService,
 	}
 }
 
@@ -182,12 +183,8 @@ func (h *Handler) AcceptDeliveryPriceHandler(c *gin.Context) {
 // AcceptDeliveryPriceHandlerGET handles client accepting the price from email link (GET - HTML response)
 func (h *Handler) AcceptDeliveryPriceHandlerGET(c *gin.Context) {
 	deliveryID := c.Param("id")
-	// Escape deliveryID to prevent XSS
-	escapedDeliveryID := html.EscapeString(deliveryID)
 
 	if err := h.deliveryService.AcceptDeliveryPrice(deliveryID); err != nil {
-		// Escape error message to prevent XSS
-		escapedError := html.EscapeString(err.Error())
 		c.Data(http.StatusBadRequest, "text/html; charset=utf-8", []byte(`
 			<!DOCTYPE html>
 			<html>
@@ -209,8 +206,8 @@ func (h *Handler) AcceptDeliveryPriceHandlerGET(c *gin.Context) {
 				<div class="container">
 					<div class="error-icon">⚠️</div>
 					<h1>Cannot Accept Quote</h1>
-					<div class="error-message">`+escapedError+`</div>
-					<div class="delivery-id">Delivery ID: `+escapedDeliveryID+`</div>
+					<div class="error-message">`+err.Error()+`</div>
+					<div class="delivery-id">Delivery ID: `+deliveryID+`</div>
 					<div class="contact-box">
 						<p style="margin: 0; font-weight: bold; color: #0056b3;">Need Help?</p>
 						<p style="margin: 5px 0 0 0; font-size: 14px;">Contact IHB Transport support for assistance with this delivery.</p>
@@ -242,7 +239,7 @@ func (h *Handler) AcceptDeliveryPriceHandlerGET(c *gin.Context) {
 				<div class="success-icon">✅</div>
 				<h1>Quote Accepted Successfully!</h1>
 				<p>Thank you for accepting our quote. We've received your confirmation.</p>
-				<div class="delivery-id">Delivery ID: `+escapedDeliveryID+`</div>
+				<div class="delivery-id">Delivery ID: `+deliveryID+`</div>
 				<p><strong>What happens next?</strong></p>
 				<p>Our team will review your acceptance and assign a driver shortly. You'll receive an email confirmation once a driver is on the way.</p>
 				<p style="margin-top: 30px; font-size: 14px; color: #999;">You can close this window now.</p>
@@ -278,22 +275,13 @@ func (h *Handler) DeclineDeliveryPriceHandler(c *gin.Context) {
 // DeclineDeliveryPriceHandlerGET handles client declining the price from email link (GET - HTML response)
 func (h *Handler) DeclineDeliveryPriceHandlerGET(c *gin.Context) {
 	deliveryID := c.Param("id")
-	// Escape deliveryID to prevent XSS
-	escapedDeliveryID := html.EscapeString(deliveryID)
-
 	reason := c.Query("reason") // Optional reason from query parameter
-	// Sanitize and limit reason length to prevent abuse (matches service layer validation)
-	if len(reason) > 1000 {
-		reason = reason[:1000]
-	}
 
 	if reason == "" {
 		reason = "No reason provided"
 	}
 
 	if err := h.deliveryService.DeclineDeliveryPrice(deliveryID, reason); err != nil {
-		// Escape error message to prevent XSS
-		escapedError := html.EscapeString(err.Error())
 		c.Data(http.StatusBadRequest, "text/html; charset=utf-8", []byte(`
 			<!DOCTYPE html>
 			<html>
@@ -315,8 +303,8 @@ func (h *Handler) DeclineDeliveryPriceHandlerGET(c *gin.Context) {
 				<div class="container">
 					<div class="error-icon">⚠️</div>
 					<h1>Cannot Decline Quote</h1>
-					<div class="error-message">`+escapedError+`</div>
-					<div class="delivery-id">Delivery ID: `+escapedDeliveryID+`</div>
+					<div class="error-message">`+err.Error()+`</div>
+					<div class="delivery-id">Delivery ID: `+deliveryID+`</div>
 					<div class="contact-box">
 						<p style="margin: 0; font-weight: bold; color: #0056b3;">Need Help?</p>
 						<p style="margin: 5px 0 0 0; font-size: 14px;">Contact IHB Transport support for assistance with this delivery.</p>
@@ -348,7 +336,7 @@ func (h *Handler) DeclineDeliveryPriceHandlerGET(c *gin.Context) {
 				<div class="info-icon">📋</div>
 				<h1>Quote Declined</h1>
 				<p>We've received your decision to decline the quote.</p>
-				<div class="delivery-id">Delivery ID: `+escapedDeliveryID+`</div>
+				<div class="delivery-id">Delivery ID: `+deliveryID+`</div>
 				<p>Thank you for considering IHB Transport. If you'd like to discuss alternative options or have questions about the quote, please feel free to contact us.</p>
 				<p style="margin-top: 30px; font-size: 14px; color: #999;">You can close this window now.</p>
 			</div>
@@ -406,6 +394,95 @@ func (h *Handler) GetDeliveryByIDHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"delivery": delivery})
+}
+
+// CreateInstantQuoteHandler creates and persists an instant quote and optionally triggers an email
+func (h *Handler) CreateInstantQuoteHandler(c *gin.Context) {
+	type InstantQuoteInput struct {
+		PickupPoint     string `json:"pickup_point" binding:"required"`
+		DeliveryAddress string `json:"delivery_address" binding:"required"`
+		Weight          string `json:"weight" binding:"required"`
+		ClientEmail     string `json:"client_email" binding:"required,email"`
+	}
+
+	var input InstantQuoteInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	quote := models.InstantQuote{
+		PickupPoint:     input.PickupPoint,
+		DeliveryAddress: input.DeliveryAddress,
+		Weight:          input.Weight,
+		ClientEmail:     input.ClientEmail,
+	}
+
+	if err := h.deliveryService.GetInstantQuote(&quote); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "Instant quote created", "instant_quote": quote})
+}
+
+// CreateReviewHandler creates a new review (public)
+func (h *Handler) CreateReviewHandler(c *gin.Context) {
+	var input struct {
+		ClientName string `json:"client_name" binding:"required"`
+		Content    string `json:"content" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	review := models.Reviews{
+		ClientName: input.ClientName,
+		Content:    input.Content,
+	}
+
+	if err := h.reviewService.CreateReview(&review); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "Review created", "review": review})
+}
+
+// GetReviewByIDHandler retrieves a review by ID
+func (h *Handler) GetReviewByIDHandler(c *gin.Context) {
+	reviewID := c.Param("id")
+	if reviewID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "review id is required"})
+		return
+	}
+
+	rev, err := h.reviewService.GetReviewByID(reviewID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"review": rev})
+}
+
+// GetInstantQuoteHandler retrieves an instant quote by ID
+func (h *Handler) GetInstantQuoteHandler(c *gin.Context) {
+	quoteID := c.Param("id")
+	if quoteID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "instant quote id is required"})
+		return
+	}
+
+	var quote models.InstantQuote
+	if err := database.DB.First(&quote, "id = ?", quoteID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "instant quote not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"instant_quote": quote})
 }
 
 // GetDeliveriesByEmailHandler retrieves all deliveries for a client email

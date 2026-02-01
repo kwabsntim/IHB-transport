@@ -14,6 +14,7 @@ type DeliveryServiceInterface interface {
 	GetDeliveryByID(id string) (*models.DeliveryRequest, error)
 	GetDeliveriesByEmail(email string) ([]models.DeliveryRequest, error)
 	GetDeliveriesByStatus(status string) ([]models.DeliveryRequest, error)
+	GetInstantQuote(instantQuote *models.InstantQuote) error
 }
 
 // EmailServiceInterface defines email operations
@@ -24,4 +25,11 @@ type EmailServiceInterface interface {
 	SendDeclinedEmail(clientEmail, deliveryID, reason string) error
 	SendDriverOnWayEmail(clientEmail, deliveryID string) error
 	SendDeliveredEmail(clientEmail, deliveryID string) error
+	SendInstantQuoteEmail(clientEmail, quoteID, pickupPoint, deliveryAddress, weight string) error
+}
+
+// ReviewServiceInterface defines review operations
+type ReviewServiceInterface interface {
+	CreateReview(review *models.Reviews) error
+	GetReviewByID(id string) (*models.Reviews, error)
 }

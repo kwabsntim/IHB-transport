@@ -1,12 +1,18 @@
 package services
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
 	"fmt"
 	"ihb-transport/internal/models"
 	"ihb-transport/internal/repository"
 	"ihb-transport/internal/utils"
+	"net/http"
 	"net/smtp"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -21,6 +27,9 @@ type emailService struct {
 	fromName     string
 	baseURL      string
 	enabled      bool
+	// Resend (HTTP API) support
+	resendAPIKey  string
+	resendEnabled bool
 }
 
 // NewEmailService creates a new email service
@@ -31,6 +40,10 @@ func NewEmailService(emailLogRepo repository.EmailLogInterface) EmailServiceInte
 	smtpPassword := os.Getenv("SMTP_PASSWORD")
 	fromEmail := os.Getenv("SMTP_FROM_EMAIL")
 	fromName := os.Getenv("SMTP_FROM_NAME")
+	// Resend settings
+	resendAPIKey := os.Getenv("RESEND_API_KEY")
+	resendFromEmail := os.Getenv("RESEND_FROM_EMAIL")
+	resendFromName := os.Getenv("RESEND_FROM_NAME")
 
 	// Check if SMTP is enabled
 	enabled := smtpHost != "" && smtpPort != "" && smtpUser != "" && smtpPassword != ""
@@ -42,30 +55,94 @@ func NewEmailService(emailLogRepo repository.EmailLogInterface) EmailServiceInte
 		fmt.Printf("✅ SMTP enabled - using %s:%s\n", smtpHost, smtpPort)
 	}
 
+	// Prefer explicit RESEND_FROM_EMAIL if provided, else fallback to SMTP_FROM_EMAIL
+	if resendFromEmail != "" {
+		fromEmail = resendFromEmail
+	}
+	if resendFromName != "" {
+		fromName = resendFromName
+	}
 	if fromEmail == "" {
 		fromEmail = "noreply@ihbtransport.com"
 	}
 	if fromName == "" {
 		fromName = "IHB Transport"
 	}
-	
+
 	// Get base URL for email links (defaults to localhost for development)
 	baseURL := os.Getenv("API_BASE_URL")
 	if baseURL == "" {
 		baseURL = "http://localhost:8080"
 	}
 
+	// Resend enabled when API key is present
+	resendEnabled := resendAPIKey != ""
+
 	return &emailService{
-		emailLogRepo: emailLogRepo,
-		smtpHost:     smtpHost,
-		smtpPort:     smtpPort,
-		smtpUser:     smtpUser,
-		smtpPassword: smtpPassword,
-		fromEmail:    fromEmail,
-		fromName:     fromName,
-		baseURL:      baseURL,
-		enabled:      enabled,
+		emailLogRepo:  emailLogRepo,
+		smtpHost:      smtpHost,
+		smtpPort:      smtpPort,
+		smtpUser:      smtpUser,
+		smtpPassword:  smtpPassword,
+		fromEmail:     fromEmail,
+		fromName:      fromName,
+		baseURL:       baseURL,
+		enabled:       enabled,
+		resendAPIKey:  resendAPIKey,
+		resendEnabled: resendEnabled,
 	}
+}
+
+// resendPayload is the request body we send to Resend API
+type resendPayload struct {
+	From    string   `json:"from"`
+	To      []string `json:"to"`
+	Subject string   `json:"subject"`
+	HTML    string   `json:"html"`
+}
+
+// sendWithResend sends the email using Resend's HTTP API
+func (s *emailService) sendWithResend(to []string, subject, html string) error {
+	if s.resendAPIKey == "" {
+		return fmt.Errorf("resend api key not configured")
+	}
+
+	from := fmt.Sprintf("%s <%s>", s.fromName, s.fromEmail)
+	payload := resendPayload{
+		From:    from,
+		To:      to,
+		Subject: subject,
+		HTML:    html,
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal resend payload: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", "https://api.resend.com/emails", bytes.NewBuffer(body))
+	if err != nil {
+		return fmt.Errorf("failed to create resend request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+s.resendAPIKey)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	req = req.WithContext(ctx)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("resend request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("resend returned status %d", resp.StatusCode)
+	}
+
+	return nil
 }
 
 // SendRequestReceivedEmail sends confirmation email when request is created
@@ -111,9 +188,49 @@ func (s *emailService) SendRequestReceivedEmail(clientEmail, clientName, deliver
 		</body>
 		</html>
 	`, clientName, deliveryID, service, pickupDate, pickupAddress, dropoffAddress)
-
+	//this sends the email to the client and logs it
 	err := s.sendEmail(clientEmail, subject, body)
 	return s.logEmail(deliveryID, clientEmail, "REQUEST_RECEIVED", err)
+}
+func (s *emailService) SendInstantQuoteEmail(quoteID, clientEmail, pickupPoint, deliveryAddress, weight string) error {
+	// Require recipient email to send instant quote
+	if strings.TrimSpace(clientEmail) == "" {
+		return fmt.Errorf("recipient email is required to send instant quote")
+	}
+
+	subject := ("Your Instant Quote is Ready with ID" + quoteID)
+
+	body := fmt.Sprintf(`
+		<!DOCTYPE html>
+		<html>
+		<head>
+		  <meta charset="utf-8" />
+		  <style>body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }</style>
+		</head>
+		<body>
+		<h2>🚀 Instant Quote Ready!</h2>
+		<p>Dear %s,</p>
+		<p>Thank you for using our Instant Quote feature! Here are the details of your quote:</p>
+		<ul>
+			<li><strong>Quote ID:</strong>%s</li>
+			<li><strong>Pickup Point:</strong> %s</li>
+			<li><strong>Delivery Address:</strong> %s</li>
+			<li><strong>Weight:</strong> %s</li>
+			
+		</ul>
+		<p>If you have any questions or would like to proceed with this quote, please contact our support team.</p>
+		<br>
+		<p>Best regards,<br>IHB Transport Team</p>
+		</body>
+		</html>
+	`, quoteID, clientEmail, pickupPoint, deliveryAddress, weight)
+	//logging the email
+
+	err := s.sendEmail(clientEmail, subject, body)
+	if err != nil {
+		return err
+	}
+	return s.logEmail(quoteID, clientEmail, "QUOTE_RECEIVED", err)
 }
 
 // SendPriceEmail sends email with quoted price
@@ -227,9 +344,9 @@ func (s *emailService) SendDeclinedEmail(clientEmail, deliveryID, reason string)
 
 // SendDriverOnWayEmail notifies that driver picked up the package
 func (s *emailService) SendDriverOnWayEmail(clientEmail, deliveryID string) error {
-	subject := fmt.Sprintf("🚚 Driver En Route - Delivery #%s", deliveryID)
+	subject := fmt.Sprintf(" Driver En Route - Delivery #%s", deliveryID)
 	body := fmt.Sprintf(`
-		<h2>📦 Great News - Your Package is On the Way!</h2>
+		<h2> Great News - Your Package is On the Way!</h2>
 		<p>Our driver has successfully picked up your package and is now en route to the delivery location.</p>
 		<p><strong>Delivery ID:</strong> %s</p>
 		<p><strong>Status:</strong> In Progress</p>
@@ -245,14 +362,14 @@ func (s *emailService) SendDriverOnWayEmail(clientEmail, deliveryID string) erro
 
 // SendDeliveredEmail sends completion confirmation
 func (s *emailService) SendDeliveredEmail(clientEmail, deliveryID string) error {
-	subject := fmt.Sprintf("✅ Delivery Completed #%s", deliveryID)
+	subject := fmt.Sprintf(" Delivery Completed #%s", deliveryID)
 	body := fmt.Sprintf(`
-		<h2>🎉 Delivery Complete!</h2>
+		<h2> Delivery Complete!</h2>
 		<p>Your package has been successfully delivered!</p>
 		<p><strong>Delivery ID:</strong> %s</p>
 		<p><strong>Status:</strong> Delivered</p>
 		<div style="background-color: #d4edda; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #28a745;">
-			<p style="margin: 0;"><strong>✅ Delivery confirmed</strong></p>
+			<p style="margin: 0;"><strong> Delivery confirmed</strong></p>
 		</div>
 		<p>Thank you for choosing IHB Transport! We hope to serve you again soon.</p>
 		<p>If you have any questions or feedback, please don't hesitate to contact us.</p>
@@ -269,8 +386,20 @@ func (s *emailService) sendEmail(to, subject, htmlBody string) error {
 	// Check rate limit before attempting to send
 	rateLimiter := utils.GetEmailRateLimiter()
 	if err := rateLimiter.CanSendEmail(to); err != nil {
-		fmt.Printf("⚠️  Rate limit exceeded: %v\n", err)
+		fmt.Printf("  Rate limit exceeded: %v\n", err)
 		return fmt.Errorf("rate limit exceeded: %w", err)
+	}
+
+	// If Resend is configured prefer it (HTTP API) — avoids SMTP egress issues
+	if s.resendEnabled {
+		if err := s.sendWithResend([]string{to}, subject, htmlBody); err != nil {
+			fmt.Printf("❌ Resend send failed to %s: %v\n", to, err)
+			return err
+		}
+		// Record successful send in rate limiter
+		rateLimiter.RecordEmailSent(to)
+		fmt.Printf("✅ Email sent via Resend to %s: %s\n", to, subject)
+		return nil
 	}
 
 	// If SMTP is not enabled, just log to console

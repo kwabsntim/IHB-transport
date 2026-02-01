@@ -73,9 +73,16 @@ type EmailLog struct {
 	ErrorMessage   string    `gorm:"type:text" json:"error_message,omitempty"`
 }
 type InstantQuote struct {
-	PickupPoint     string `json:"pickup_point"`
-	DeliveryAddress string `json:"delivery_address"`
-	Weight          string `json:"weight"`
+	ID              uuid.UUID `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`
+	PickupPoint     string    `json:"pickup_point"`
+	DeliveryAddress string    `json:"delivery_address"`
+	Weight          string    `json:"weight"`
+	ClientEmail     string    `json:"client_email"`
+}
+type Reviews struct {
+	ID         uuid.UUID `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`
+	ClientName string    `gorm:"type:varchar(120)" json:"client_name"`
+	Content    string    `gorm:"type:text" json:"content"`
 }
 
 // constants for the status

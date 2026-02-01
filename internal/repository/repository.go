@@ -22,11 +22,14 @@ func NewDeliveryRepository() DeliveryInterface {
 // create a delivery
 func (r *deliveryRepository) CreateDelivery(delivery *models.DeliveryRequest) error {
 	if err := r.db.Create(delivery).Error; err != nil {
-		log.Printf("Error creating delivery: %v", err)
+		log.Fatalf("Could not create delivery")
 		return err
 	}
 	return nil
 }
+
+// ge
+// creates an instant quote
 func (r *deliveryRepository) GetInstantQuote(InstantQuote *models.InstantQuote) error {
 	if err := r.db.Create(InstantQuote).Error; err != nil {
 		log.Printf("Error creating instant quote: %v", err)
@@ -34,8 +37,6 @@ func (r *deliveryRepository) GetInstantQuote(InstantQuote *models.InstantQuote) 
 	}
 	return nil
 }
-
-// get all the deliveries
 
 func (r *deliveryRepository) FindAllDeliveries() ([]models.DeliveryRequest, error) {
 	var deliveries []models.DeliveryRequest
@@ -99,7 +100,7 @@ func (r *deliveryRepository) FindByEmail(email string) ([]models.DeliveryRequest
 // update the contents of a delivery
 func (r *deliveryRepository) UpdateDelivery(delivery *models.DeliveryRequest) error {
 	if err := r.db.Save(delivery).Error; err != nil {
-		log.Printf("Error updating delivery: %v", err)
+		log.Fatalf("Could not update delivery")
 		return err
 	}
 	return nil
@@ -193,6 +194,32 @@ func NewEmailLogRepository() EmailLogInterface {
 	return &emailLogRepository{
 		db: database.DB,
 	}
+}
+
+// ===== REVIEWS REPOSITORY =====
+
+type reviewsRepository struct {
+	db *gorm.DB
+}
+
+func NewReviewsRepository() ReviewsInterface {
+	return &reviewsRepository{
+		db: database.DB,
+	}
+}
+
+// CreateReview creates a new review entry
+func (r *reviewsRepository) CreateReview(review *models.Reviews) error {
+	return r.db.Create(review).Error
+}
+
+// FindByID finds a review by UUID
+func (r *reviewsRepository) FindByID(id uuid.UUID) (*models.Reviews, error) {
+	var rev models.Reviews
+	if err := r.db.First(&rev, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+	return &rev, nil
 }
 
 // CreateEmailLog creates a new email log entry

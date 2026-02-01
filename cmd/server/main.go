@@ -31,6 +31,7 @@ func main() {
 	deliveryRepo := repository.NewDeliveryRepository()
 	statusLogRepo := repository.NewStatusLogRepository()
 	emailLogRepo := repository.NewEmailLogRepository()
+	reviewsRepo := repository.NewReviewsRepository()
 
 	// ==================== INITIALIZE SERVICES ====================
 	emailService := services.NewEmailService(emailLogRepo)
@@ -40,9 +41,10 @@ func main() {
 		emailLogRepo,
 		emailService,
 	)
+	reviewsService := services.NewReviewService(reviewsRepo)
 
 	// ==================== INITIALIZE HANDLERS ====================
-	handler := handlers.NewHandler(deliveryService)
+	handler := handlers.NewHandler(deliveryService, reviewsService)
 
 	// ==================== SETUP ROUTER ====================
 	router := gin.New() // Use gin.New() instead of gin.Default() for custom middleware

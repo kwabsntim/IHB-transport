@@ -461,3 +461,27 @@ func (s *deliveryService) GetDeliveriesByStatus(status string) ([]models.Deliver
 
 	return deliveries, nil
 }
+func (s *deliveryService) GetInstantQuote(instantQuote *models.InstantQuote) error {
+	if err := utils.ValidateRequired("pickup point", instantQuote.PickupPoint); err != nil {
+		return err
+	}
+	if err := utils.ValidateRequired("delivery address", instantQuote.DeliveryAddress); err != nil {
+		return err
+	}
+	if err := utils.ValidateRequired("weight", instantQuote.Weight); err != nil {
+		return err
+	}
+	if err := utils.ValidateEmail(instantQuote.ClientEmail); err != nil {
+		return err
+	}
+	// Here you would implement your logic to calculate the instant quote based on the provided details.
+	// For now, we will just return a success message.
+	if err := s.deliveryRepo.GetInstantQuote(instantQuote); err != nil {
+		return err
+	}
+	if err := s.emailService.SendInstantQuoteEmail(instantQuote.ClientEmail, instantQuote.ID.String(), instantQuote.PickupPoint, instantQuote.DeliveryAddress, instantQuote.Weight); err != nil {
+		fmt.Printf("Warning: failed to send instant quote email: %v\n", err)
+	}
+	return nil
+
+}
