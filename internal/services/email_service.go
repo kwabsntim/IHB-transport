@@ -30,6 +30,8 @@ type emailService struct {
 	// Resend (HTTP API) support
 	resendAPIKey  string
 	resendEnabled bool
+	// Frontend base URL (for links that should open the SPA)
+	frontendURL string
 }
 
 // NewEmailService creates a new email service
@@ -69,11 +71,13 @@ func NewEmailService(emailLogRepo repository.EmailLogInterface) EmailServiceInte
 		fromName = "IHB Transport"
 	}
 
-	// Get base URL for email links (defaults to localhost for development)
+	// Get base URL for backend links used in email templates
 	baseURL := os.Getenv("API_BASE_URL")
 	if baseURL == "" {
 		baseURL = "http://localhost:8080"
 	}
+	// Frontend URL (optional) — used when you want the email to point to your SPA
+	frontendURL := os.Getenv("FRONTEND_BASE_URL")
 
 	// Resend enabled when API key is present
 	resendEnabled := resendAPIKey != ""
@@ -87,6 +91,7 @@ func NewEmailService(emailLogRepo repository.EmailLogInterface) EmailServiceInte
 		fromEmail:     fromEmail,
 		fromName:      fromName,
 		baseURL:       baseURL,
+		frontendURL:   frontendURL,
 		enabled:       enabled,
 		resendAPIKey:  resendAPIKey,
 		resendEnabled: resendEnabled,
@@ -236,6 +241,16 @@ func (s *emailService) SendInstantQuoteEmail(quoteID, clientEmail, pickupPoint, 
 // SendPriceEmail sends email with quoted price
 func (s *emailService) SendPriceEmail(clientEmail string, price float64, deliveryID string) error {
 	subject := fmt.Sprintf("Price Quote for Delivery #%s", deliveryID)
+	// Build frontend and backend accept/decline links. Prefer frontend if configured.
+	backendAccept := fmt.Sprintf("%s/api/public/deliveries/%s/accept", s.baseURL, deliveryID)
+	backendDecline := fmt.Sprintf("%s/api/public/deliveries/%s/decline", s.baseURL, deliveryID)
+	acceptLink := backendAccept
+	declineLink := backendDecline
+	if strings.TrimSpace(s.frontendURL) != "" {
+		acceptLink = fmt.Sprintf("%s/deliveries/%s/accept", strings.TrimRight(s.frontendURL, "/"), deliveryID)
+		declineLink = fmt.Sprintf("%s/deliveries/%s/decline", strings.TrimRight(s.frontendURL, "/"), deliveryID)
+	}
+
 	body := fmt.Sprintf(`
 		<!DOCTYPE html>
 		<html>
@@ -269,8 +284,8 @@ func (s *emailService) SendPriceEmail(clientEmail string, price float64, deliver
 					<p>Please review the quote and choose an option:</p>
 					
 					<div class="button-container">
-						<a href="%s/api/public/deliveries/%s/accept" class="button accept-btn">✅ Accept Quote</a>
-						<a href="%s/api/public/deliveries/%s/decline" class="button decline-btn">❌ Decline Quote</a>
+						<a href="%s" class="button accept-btn">✅ Accept Quote</a>
+						<a href="%s" class="button decline-btn">❌ Decline Quote</a>
 					</div>
 					
 					<p style="font-size: 12px; color: #666;">This quote is valid for 48 hours.</p>
@@ -281,7 +296,7 @@ func (s *emailService) SendPriceEmail(clientEmail string, price float64, deliver
 			</div>
 		</body>
 		</html>
-	`, deliveryID, price, s.baseURL, deliveryID, s.baseURL, deliveryID)
+	`, deliveryID, price, acceptLink, declineLink)
 
 	err := s.sendEmail(clientEmail, subject, body)
 	return s.logEmail(deliveryID, clientEmail, "PRICE_SENT", err)
