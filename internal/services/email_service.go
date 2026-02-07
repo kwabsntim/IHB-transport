@@ -197,38 +197,59 @@ func (s *emailService) SendRequestReceivedEmail(clientEmail, clientName, deliver
 	err := s.sendEmail(clientEmail, subject, body)
 	return s.logEmail(deliveryID, clientEmail, "REQUEST_RECEIVED", err)
 }
-func (s *emailService) SendInstantQuoteEmail(quoteID, clientEmail, pickupPoint, deliveryAddress, weight string) error {
+func (s *emailService) SendInstantQuoteEmail(clientEmail, quoteID, pickupPoint, deliveryAddress, weight string) error {
 	// Require recipient email to send instant quote
 	if strings.TrimSpace(clientEmail) == "" {
 		return fmt.Errorf("recipient email is required to send instant quote")
 	}
 
-	subject := ("Your Instant Quote is Ready with ID" + quoteID)
+	subject := fmt.Sprintf("Your Instant Quote is Ready - ID: %s", quoteID)
 
 	body := fmt.Sprintf(`
 		<!DOCTYPE html>
 		<html>
 		<head>
 		  <meta charset="utf-8" />
-		  <style>body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }</style>
+		  <style>
+		    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+		    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+		    .header { background-color: #667eea; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+		    .content { background-color: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px; }
+		    .info-box { background-color: white; padding: 15px; margin: 10px 0; border-left: 4px solid #667eea; }
+		    .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+		    ul { list-style: none; padding: 0; }
+		    li { padding: 8px 0; border-bottom: 1px solid #eee; }
+		    li:last-child { border-bottom: none; }
+		  </style>
 		</head>
 		<body>
-		<h2>🚀 Instant Quote Ready!</h2>
-		<p>Dear %s,</p>
-		<p>Thank you for using our Instant Quote feature! Here are the details of your quote:</p>
-		<ul>
-			<li><strong>Quote ID:</strong>%s</li>
-			<li><strong>Pickup Point:</strong> %s</li>
-			<li><strong>Delivery Address:</strong> %s</li>
-			<li><strong>Weight:</strong> %s</li>
-			
-		</ul>
-		<p>If you have any questions or would like to proceed with this quote, please contact our support team.</p>
-		<br>
-		<p>Best regards,<br>IHB Transport Team</p>
+		  <div class="container">
+		    <div class="header">
+		      <h1 style="margin: 0;">🚀 Instant Quote Ready!</h1>
+		    </div>
+		    <div class="content">
+		      <p>Dear Customer,</p>
+		      <p>Thank you for using our Instant Quote feature! Here are the details of your quote:</p>
+		      
+		      <div class="info-box">
+		        <ul>
+		          <li><strong>Quote ID:</strong> %s</li>
+		          <li><strong>Pickup Point:</strong> %s</li>
+		          <li><strong>Delivery Address:</strong> %s</li>
+		          <li><strong>Weight:</strong> %s</li>
+		        </ul>
+		      </div>
+		      
+		      <p>If you have any questions or would like to proceed with this quote, please contact our support team.</p>
+		    </div>
+		    <div class="footer">
+		      <p>Best regards,<br><strong>IHB Transport Team</strong></p>
+		      <p>IHB Transport APS - Reliable Delivery Services</p>
+		    </div>
+		  </div>
 		</body>
 		</html>
-	`, quoteID, clientEmail, pickupPoint, deliveryAddress, weight)
+	`, quoteID, pickupPoint, deliveryAddress, weight)
 	//logging the email
 
 	err := s.sendEmail(clientEmail, subject, body)
