@@ -78,6 +78,7 @@ type InstantQuote struct {
 	DeliveryAddress string    `json:"delivery_address"`
 	Weight          string    `json:"weight"`
 	ClientEmail     string    `json:"client_email"`
+	CreatedAt       time.Time `gorm:"autoCreateTime" json:"created_at"`
 }
 type Reviews struct {
 	ID         uuid.UUID `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`

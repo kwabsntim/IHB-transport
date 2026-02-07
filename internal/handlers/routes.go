@@ -37,6 +37,7 @@ func SetupRoutes(router *gin.Engine, handler *Handler) {
 
 		// Client actions on their deliveries
 		public.POST("/deliveries/:id/accept", handler.AcceptDeliveryPriceHandler)
+		public.GET("/deliveries/:id/accept", handler.AcceptDeliveryPriceHandlerGET) // For email links
 		
 		public.POST("/deliveries/:id/decline", handler.DeclineDeliveryPriceHandler)
 		
