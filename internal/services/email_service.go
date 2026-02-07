@@ -250,13 +250,10 @@ func (s *emailService) SendInstantQuoteEmail(clientEmail, quoteID, pickupPoint, 
 		</body>
 		</html>
 	`, quoteID, pickupPoint, deliveryAddress, weight)
-	//logging the email
 
+	// Send email and log the result
 	err := s.sendEmail(clientEmail, subject, body)
-	if err != nil {
-		return err
-	}
-	return s.logEmail(quoteID, clientEmail, "QUOTE_RECEIVED", err)
+	return s.logEmail(quoteID, clientEmail, "INSTANT_QUOTE", err)
 }
 
 // SendPriceEmail sends email with quoted price
