@@ -59,6 +59,9 @@ func SetupRoutes(router *gin.Engine, handler *Handler) {
 
 			// Set price for delivery
 			admin.POST("/deliveries/:id/price", handler.SetDeliveryPriceHandler)
+
+			// Get all instant quotes
+			admin.GET("/instant-quotes", handler.GetAllInstantQuotesHandler)
 		}
 
 		// Driver routes - update delivery status

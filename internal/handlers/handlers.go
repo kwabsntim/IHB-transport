@@ -468,6 +468,20 @@ func (h *Handler) GetReviewByIDHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"review": rev})
 }
 
+// GetAllInstantQuotesHandler retrieves all instant quotes (admin only)
+func (h *Handler) GetAllInstantQuotesHandler(c *gin.Context) {
+	var quotes []models.InstantQuote
+	if err := database.DB.Order("created_at DESC").Find(&quotes).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch instant quotes"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"count":          len(quotes),
+		"instant_quotes": quotes,
+	})
+}
+
 // GetInstantQuoteHandler retrieves an instant quote by ID
 func (h *Handler) GetInstantQuoteHandler(c *gin.Context) {
 	quoteID := c.Param("id")
