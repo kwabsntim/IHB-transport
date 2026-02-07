@@ -225,7 +225,7 @@ func (s *emailService) SendInstantQuoteEmail(clientEmail, quoteID, pickupPoint, 
 		<body>
 		  <div class="container">
 		    <div class="header">
-		      <h1 style="margin: 0;">🚀 Instant Quote Ready!</h1>
+		      <h1 style="margin: 0;">Instant Quote Ready!</h1>
 		    </div>
 		    <div class="content">
 		      <p>Dear Customer,</p>
