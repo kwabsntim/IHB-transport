@@ -169,7 +169,7 @@ func (s *emailService) SendRequestReceivedEmail(clientEmail, clientName, deliver
 		<body>
 			<div class="container">
 				<div class="header">
-					<h1>✅ Request Received</h1>
+					<h1>Request Received</h1>
 				</div>
 				<div class="content">
 					<p>Dear %s,</p>
@@ -302,8 +302,8 @@ func (s *emailService) SendPriceEmail(clientEmail string, price float64, deliver
 					<p>Please review the quote and choose an option:</p>
 					
 					<div class="button-container">
-						<a href="%s" class="button accept-btn">✅ Accept Quote</a>
-						<a href="%s" class="button decline-btn">❌ Decline Quote</a>
+						<a href="%s" class="button accept-btn">Accept Quote</a>
+						<a href="%s" class="button decline-btn">Decline Quote</a>
 					</div>
 					
 					<p style="font-size: 12px; color: #666;">This quote is valid for 48 hours.</p>
@@ -324,7 +324,7 @@ func (s *emailService) SendPriceEmail(clientEmail string, price float64, deliver
 func (s *emailService) SendAcceptedEmail(clientEmail, deliveryID string) error {
 	subject := fmt.Sprintf("Delivery Confirmed #%s", deliveryID)
 	body := fmt.Sprintf(`
-		<h2>🎉 Your Delivery is Confirmed!</h2>
+		<h2>Your Delivery is Confirmed</h2>
 		<p>Thank you for accepting our quote! Your delivery has been confirmed and scheduled.</p>
 		<p><strong>Delivery ID:</strong> %s</p>
 		<p><strong>Next Steps:</strong></p>
@@ -377,9 +377,9 @@ func (s *emailService) SendDeclinedEmail(clientEmail, deliveryID, reason string)
 
 // SendDriverOnWayEmail notifies that driver picked up the package
 func (s *emailService) SendDriverOnWayEmail(clientEmail, deliveryID string) error {
-	subject := fmt.Sprintf(" Driver En Route - Delivery #%s", deliveryID)
+	subject := fmt.Sprintf("Driver En Route - Delivery #%s", deliveryID)
 	body := fmt.Sprintf(`
-		<h2> Great News - Your Package is On the Way!</h2>
+		<h2>Your Package is On the Way</h2>
 		<p>Our driver has successfully picked up your package and is now en route to the delivery location.</p>
 		<p><strong>Delivery ID:</strong> %s</p>
 		<p><strong>Status:</strong> In Progress</p>
@@ -395,14 +395,14 @@ func (s *emailService) SendDriverOnWayEmail(clientEmail, deliveryID string) erro
 
 // SendDeliveredEmail sends completion confirmation
 func (s *emailService) SendDeliveredEmail(clientEmail, deliveryID string) error {
-	subject := fmt.Sprintf(" Delivery Completed #%s", deliveryID)
+	subject := fmt.Sprintf("Delivery Completed #%s", deliveryID)
 	body := fmt.Sprintf(`
-		<h2> Delivery Complete!</h2>
+		<h2>Delivery Complete</h2>
 		<p>Your package has been successfully delivered!</p>
 		<p><strong>Delivery ID:</strong> %s</p>
 		<p><strong>Status:</strong> Delivered</p>
 		<div style="background-color: #d4edda; padding: 15px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #28a745;">
-			<p style="margin: 0;"><strong> Delivery confirmed</strong></p>
+			<p style="margin: 0;"><strong>Delivery confirmed</strong></p>
 		</div>
 		<p>Thank you for choosing IHB Transport! We hope to serve you again soon.</p>
 		<p>If you have any questions or feedback, please don't hesitate to contact us.</p>
