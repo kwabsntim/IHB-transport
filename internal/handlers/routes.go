@@ -40,7 +40,7 @@ func SetupRoutes(router *gin.Engine, handler *Handler) {
 		public.GET("/deliveries/:id/accept", handler.AcceptDeliveryPriceHandlerGET) // For email links
 		
 		public.POST("/deliveries/:id/decline", handler.DeclineDeliveryPriceHandler)
-		
+	}
 
 	// ==================== PROTECTED ROUTES (Admin/Driver) ====================
 
