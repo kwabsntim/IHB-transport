@@ -26,9 +26,7 @@ func SetupRoutes(router *gin.Engine, handler *Handler) {
 		public.POST("/reviews", handler.CreateReviewHandler)
 		public.GET("/reviews/:id", handler.GetReviewByIDHandler)
 
-		// Get instant quote by ID (public)
-		public.GET("/instant-quote/:id", handler.GetInstantQuoteHandler)
-
+		
 		// Track delivery by ID (clients)
 		public.GET("/deliveries/:id", handler.GetDeliveryByIDHandler)
 
@@ -62,6 +60,9 @@ func SetupRoutes(router *gin.Engine, handler *Handler) {
 
 			// Get all instant quotes
 			admin.GET("/instant-quotes", handler.GetAllInstantQuotesHandler)
+
+			// Get individual instant quote by ID
+			admin.GET("/instant-quotes/:id", handler.GetInstantQuoteHandler)
 		}
 
 		// Driver routes - update delivery status
