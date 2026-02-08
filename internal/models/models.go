@@ -43,6 +43,7 @@ type DeliveryRequest struct {
 
 	// Delivery Details
 	Price         float64     `gorm:"type:decimal(10,2);default:0.0" json:"price"`
+	PriceOption   string      `gorm:"type:varchar(100)" json:"price_option"`
 	Status        string      `gorm:"type:varchar(20);default:'REQUESTED'" json:"status"`
 	DeclineReason string      `gorm:"type:text" json:"decline_reason,omitempty"`
 	DeclinedAt    *time.Time  `gorm:"type:timestamp" json:"declined_at,omitempty"`
