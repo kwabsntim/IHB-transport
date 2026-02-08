@@ -325,8 +325,8 @@ func (s *deliveryService) AdminAcceptDeliveryPrice(id string) error {
 		return fmt.Errorf("delivery not found: %w", err)
 	}
 
-	// Validate status (must be PRICED)
-	if delivery.Status != models.StatusPriced {
+	// Validate status (must be PRICED or REQUESTED for admin acceptance)
+	if delivery.Status != models.StatusPriced && delivery.Status != models.StatusRequested {
 		switch delivery.Status {
 		case models.StatusAccepted:
 			return fmt.Errorf("this quote has already been accepted")
