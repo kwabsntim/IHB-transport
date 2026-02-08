@@ -97,6 +97,7 @@ type CreateDeliveryInput struct {
 	Weight          string `json:"weight"`
 	Service         string `json:"service" binding:"required"`
 	PickupDate      string `json:"pickup_date" binding:"required"` // Format: YYYY-MM-DD
+	PriceOption     string `json:"price_option"`
 }
 
 // CreateDeliveryHandler handles creation of new delivery requests (public)
@@ -131,6 +132,7 @@ func (h *Handler) CreateDeliveryHandler(c *gin.Context) {
 		Weight:          input.Weight,
 		Service:         input.Service,
 		PickupDate:      &pickupDate,
+		PriceOption:     input.PriceOption,
 	}
 
 	// Call service
