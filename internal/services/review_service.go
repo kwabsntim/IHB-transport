@@ -50,3 +50,17 @@ func (s *reviewService) GetReviewByID(id string) (*models.Reviews, error) {
 func (s *reviewService) GetAllReviews() ([]models.Reviews, error) {
 	return s.reviewRepo.FindAll()
 }
+
+// DeleteReview deletes a review by ID
+func (s *reviewService) DeleteReview(id string) error {
+	uid, err := uuid.Parse(id)
+	if err != nil {
+		return fmt.Errorf("invalid review id: %w", err)
+	}
+	// Check if review exists
+	_, err = s.reviewRepo.FindByID(uid)
+	if err != nil {
+		return fmt.Errorf("review not found: %w", err)
+	}
+	return s.reviewRepo.Delete(uid)
+}

@@ -256,6 +256,11 @@ func (r *reviewsRepository) FindAll() ([]models.Reviews, error) {
 	return reviews, nil
 }
 
+// Delete deletes a review by ID
+func (r *reviewsRepository) Delete(id uuid.UUID) error {
+	return r.db.Delete(&models.Reviews{}, "id = ?", id).Error
+}
+
 // CreateEmailLog creates a new email log entry
 func (r *emailLogRepository) CreateEmailLog(log *models.EmailLog) error {
 	return r.db.Create(log).Error

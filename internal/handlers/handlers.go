@@ -496,6 +496,22 @@ func (h *Handler) GetReviewByIDHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"review": rev})
 }
 
+// DeleteReviewHandler deletes a review by ID
+func (h *Handler) DeleteReviewHandler(c *gin.Context) {
+	reviewID := c.Param("id")
+	if reviewID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "review id is required"})
+		return
+	}
+
+	if err := h.reviewService.DeleteReview(reviewID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Review deleted successfully"})
+}
+
 // GetAllInstantQuotesHandler retrieves all instant quotes (admin only)
 func (h *Handler) GetAllInstantQuotesHandler(c *gin.Context) {
 	var quotes []models.InstantQuote

@@ -44,4 +44,5 @@ type ReviewServiceInterface interface {
 	CreateReview(review *models.Reviews) error
 	GetReviewByID(id string) (*models.Reviews, error)
 	GetAllReviews() ([]models.Reviews, error)
+	DeleteReview(id string) error
 }

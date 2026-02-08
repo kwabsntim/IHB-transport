@@ -54,4 +54,5 @@ type ReviewsInterface interface {
 	CreateReview(review *models.Reviews) error
 	FindByID(id uuid.UUID) (*models.Reviews, error)
 	FindAll() ([]models.Reviews, error)
+	Delete(id uuid.UUID) error
 }

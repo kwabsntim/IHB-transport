@@ -26,6 +26,7 @@ func SetupRoutes(router *gin.Engine, handler *Handler) {
 		public.POST("/reviews", handler.CreateReviewHandler)
 		public.GET("/reviews/all", handler.GetAllReviewsHandler)
 		public.GET("/reviews/:id", handler.GetReviewByIDHandler)
+		public.DELETE("/reviews/:id/delete", handler.DeleteReviewHandler)
 
 		
 		// Track delivery by ID (clients)
@@ -33,12 +34,6 @@ func SetupRoutes(router *gin.Engine, handler *Handler) {
 
 		// Get deliveries by email (clients checking their deliveries)
 		public.GET("/deliveries/track", handler.GetDeliveriesByEmailHandler)
-
-		// Client actions on their deliveries
-		public.POST("/deliveries/:id/accept", handler.AcceptDeliveryPriceHandler)
-		public.GET("/deliveries/:id/accept", handler.AcceptDeliveryPriceHandlerGET) // For email links
-		
-		public.POST("/deliveries/:id/decline", handler.DeclineDeliveryPriceHandler)
 
 		// Client actions on instant quotes
 		public.POST("/instant-quotes/:id/accept", handler.AcceptInstantQuotePriceHandler)
@@ -60,9 +55,6 @@ func SetupRoutes(router *gin.Engine, handler *Handler) {
 
 			// Get deliveries by status
 			admin.GET("/deliveries/status", handler.GetDeliveriesByStatusHandler)
-
-			// Set price for delivery
-			admin.POST("/deliveries/:id/price", handler.SetDeliveryPriceHandler)
 
 			// Get all instant quotes
 			admin.GET("/instant-quotes", handler.GetAllInstantQuotesHandler)
