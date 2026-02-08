@@ -539,3 +539,135 @@ func (s *deliveryService) GetInstantQuote(instantQuote *models.InstantQuote) err
 	return nil
 
 }
+
+// GetAllInstantQuotes returns all instant quotes
+func (s *deliveryService) GetAllInstantQuotes() ([]models.InstantQuote, error) {
+	return s.deliveryRepo.FindAllInstantQuotes()
+}
+
+// GetInstantQuoteByID returns an instant quote by ID
+func (s *deliveryService) GetInstantQuoteByID(id string) (*models.InstantQuote, error) {
+	quoteID, err := uuid.Parse(id)
+	if err != nil {
+		return nil, fmt.Errorf("invalid quote ID: %w", err)
+	}
+	return s.deliveryRepo.FindInstantQuoteByID(quoteID)
+}
+
+// SetInstantQuotePrice sets the price for an instant quote and sends price email to client
+func (s *deliveryService) SetInstantQuotePrice(id string, price float64) error {
+	quoteID, err := uuid.Parse(id)
+	if err != nil {
+		return fmt.Errorf("invalid quote ID format: %w", err)
+	}
+
+	quote, err := s.deliveryRepo.FindInstantQuoteByID(quoteID)
+	if err != nil {
+		return fmt.Errorf("instant quote not found: %w", err)
+	}
+
+	if quote.Status != models.StatusRequested {
+		return fmt.Errorf("cannot set price for quote with status %s", quote.Status)
+	}
+
+	if price <= 0 {
+		return fmt.Errorf("price must be greater than 0")
+	}
+
+	quote.Price = price
+	quote.Status = models.StatusPriced
+
+	if err := s.deliveryRepo.UpdateInstantQuote(quote); err != nil {
+		return fmt.Errorf("failed to update instant quote: %w", err)
+	}
+
+	// Send price email to client
+	if err := s.emailService.SendInstantQuotePriceEmail(quote.ClientEmail, price, quote.ID.String()); err != nil {
+		fmt.Printf("Warning: failed to send instant quote price email: %v\n", err)
+	}
+
+	return nil
+}
+
+// AcceptInstantQuotePrice - Client accepts the quoted price for instant quote
+func (s *deliveryService) AcceptInstantQuotePrice(id string) error {
+	quoteID, err := uuid.Parse(id)
+	if err != nil {
+		return fmt.Errorf("invalid quote ID: %w", err)
+	}
+
+	quote, err := s.deliveryRepo.FindInstantQuoteByID(quoteID)
+	if err != nil {
+		return fmt.Errorf("instant quote not found: %w", err)
+	}
+
+	// Validate status (must be PRICED)
+	if quote.Status != models.StatusPriced {
+		switch quote.Status {
+		case models.StatusAccepted:
+			return fmt.Errorf("this quote has already been accepted")
+		case models.StatusDeclined:
+			return fmt.Errorf("this quote has already been declined and cannot be accepted")
+		case models.StatusRequested:
+			return fmt.Errorf("no price has been set for this quote yet")
+		default:
+			return fmt.Errorf("cannot accept quote in current status: %s", quote.Status)
+		}
+	}
+
+	quote.Status = models.StatusAccepted
+
+	if err := s.deliveryRepo.UpdateInstantQuote(quote); err != nil {
+		return fmt.Errorf("failed to update instant quote: %w", err)
+	}
+
+	// Send accepted confirmation email
+	if err := s.emailService.SendInstantQuoteAcceptedEmail(quote.ClientEmail, quote.ID.String()); err != nil {
+		fmt.Printf("Warning: failed to send instant quote accepted email: %v\n", err)
+	}
+
+	return nil
+}
+
+// DeclineInstantQuotePrice - Client declines the quoted price for instant quote
+func (s *deliveryService) DeclineInstantQuotePrice(id string, reason string) error {
+	quoteID, err := uuid.Parse(id)
+	if err != nil {
+		return fmt.Errorf("invalid quote ID: %w", err)
+	}
+
+	quote, err := s.deliveryRepo.FindInstantQuoteByID(quoteID)
+	if err != nil {
+		return fmt.Errorf("instant quote not found: %w", err)
+	}
+
+	// Validate status (must be PRICED)
+	if quote.Status != models.StatusPriced {
+		switch quote.Status {
+		case models.StatusAccepted:
+			return fmt.Errorf("this quote has already been accepted and cannot be declined")
+		case models.StatusDeclined:
+			return fmt.Errorf("this quote has already been declined")
+		case models.StatusRequested:
+			return fmt.Errorf("no price has been set for this quote yet")
+		default:
+			return fmt.Errorf("cannot decline quote in current status: %s", quote.Status)
+		}
+	}
+
+	now := time.Now()
+	quote.Status = models.StatusDeclined
+	quote.DeclineReason = reason
+	quote.DeclinedAt = &now
+
+	if err := s.deliveryRepo.UpdateInstantQuote(quote); err != nil {
+		return fmt.Errorf("failed to update instant quote: %w", err)
+	}
+
+	// Send declined email
+	if err := s.emailService.SendInstantQuoteDeclinedEmail(quote.ClientEmail, quote.ID.String(), reason); err != nil {
+		fmt.Printf("Warning: failed to send instant quote declined email: %v\n", err)
+	}
+
+	return nil
+}

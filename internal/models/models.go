@@ -74,12 +74,17 @@ type EmailLog struct {
 	ErrorMessage   string    `gorm:"type:text" json:"error_message,omitempty"`
 }
 type InstantQuote struct {
-	ID              uuid.UUID `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`
-	PickupPoint     string    `json:"pickup_point"`
-	DeliveryAddress string    `json:"delivery_address"`
-	Weight          string    `json:"weight"`
-	ClientEmail     string    `json:"client_email"`
-	CreatedAt       time.Time `gorm:"autoCreateTime" json:"created_at"`
+	ID              uuid.UUID  `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`
+	PickupPoint     string     `json:"pickup_point"`
+	DeliveryAddress string     `json:"delivery_address"`
+	Weight          string     `json:"weight"`
+	ClientEmail     string     `json:"client_email"`
+	Price           float64    `gorm:"type:decimal(10,2);default:0.0" json:"price"`
+	Status          string     `gorm:"type:varchar(20);default:'REQUESTED'" json:"status"`
+	DeclineReason   string     `gorm:"type:text" json:"decline_reason,omitempty"`
+	DeclinedAt      *time.Time `gorm:"type:timestamp" json:"declined_at,omitempty"`
+	CreatedAt       time.Time  `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt       time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
 }
 type Reviews struct {
 	ID         uuid.UUID `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`

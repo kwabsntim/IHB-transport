@@ -16,6 +16,12 @@ type DeliveryServiceInterface interface {
 	GetDeliveriesByEmail(email string) ([]models.DeliveryRequest, error)
 	GetDeliveriesByStatus(status string) ([]models.DeliveryRequest, error)
 	GetInstantQuote(instantQuote *models.InstantQuote) error
+	// InstantQuote pricing operations
+	SetInstantQuotePrice(id string, price float64) error
+	AcceptInstantQuotePrice(id string) error
+	DeclineInstantQuotePrice(id string, reason string) error
+	GetAllInstantQuotes() ([]models.InstantQuote, error)
+	GetInstantQuoteByID(id string) (*models.InstantQuote, error)
 }
 
 // EmailServiceInterface defines email operations
@@ -27,10 +33,15 @@ type EmailServiceInterface interface {
 	SendDriverOnWayEmail(clientEmail, deliveryID string) error
 	SendDeliveredEmail(clientEmail, deliveryID string) error
 	SendInstantQuoteEmail(clientEmail, quoteID, pickupPoint, deliveryAddress, weight string) error
+	// InstantQuote pricing emails
+	SendInstantQuotePriceEmail(clientEmail string, price float64, quoteID string) error
+	SendInstantQuoteAcceptedEmail(clientEmail, quoteID string) error
+	SendInstantQuoteDeclinedEmail(clientEmail, quoteID, reason string) error
 }
 
 // ReviewServiceInterface defines review operations
 type ReviewServiceInterface interface {
 	CreateReview(review *models.Reviews) error
 	GetReviewByID(id string) (*models.Reviews, error)
+	GetAllReviews() ([]models.Reviews, error)
 }

@@ -465,6 +465,20 @@ func (h *Handler) CreateReviewHandler(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "Review created", "review": review})
 }
 
+// GetAllReviewsHandler retrieves all reviews
+func (h *Handler) GetAllReviewsHandler(c *gin.Context) {
+	reviews, err := h.reviewService.GetAllReviews()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch reviews"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"count":   len(reviews),
+		"reviews": reviews,
+	})
+}
+
 // GetReviewByIDHandler retrieves a review by ID
 func (h *Handler) GetReviewByIDHandler(c *gin.Context) {
 	reviewID := c.Param("id")
@@ -511,6 +525,121 @@ func (h *Handler) GetInstantQuoteHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"instant_quote": quote})
+}
+
+// SetInstantQuotePriceHandler handles admin setting price for an instant quote
+func (h *Handler) SetInstantQuotePriceHandler(c *gin.Context) {
+	quoteID := c.Param("id")
+
+	var input SetPriceInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Valid price is required"})
+		return
+	}
+
+	if err := h.deliveryService.SetInstantQuotePrice(quoteID, input.Price); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Instant quote price set successfully and email sent to client"})
+}
+
+// AcceptInstantQuotePriceHandler handles client accepting the instant quote price (POST - JSON response)
+func (h *Handler) AcceptInstantQuotePriceHandler(c *gin.Context) {
+	quoteID := c.Param("id")
+
+	if err := h.deliveryService.AcceptInstantQuotePrice(quoteID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Instant quote price accepted successfully"})
+}
+
+// AcceptInstantQuotePriceHandlerGET handles client accepting the instant quote price from email link (GET - HTML response)
+func (h *Handler) AcceptInstantQuotePriceHandlerGET(c *gin.Context) {
+	quoteID := c.Param("id")
+
+	if err := h.deliveryService.AcceptInstantQuotePrice(quoteID); err != nil {
+		c.Data(http.StatusBadRequest, "text/html; charset=utf-8", []byte(`
+			<!DOCTYPE html>
+			<html>
+			<head>
+				<title>Cannot Accept Quote - IHB Transport</title>
+				<meta name="viewport" content="width=device-width, initial-scale=1.0">
+				<style>
+					body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background-color: #f5f5f5; padding: 20px; }
+					.container { text-align: center; padding: 40px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 500px; width: 100%; }
+					.error-icon { font-size: 60px; margin-bottom: 20px; }
+					h1 { color: #dc3545; margin-bottom: 20px; font-size: 24px; }
+					.error-message { color: #333; line-height: 1.6; background: #f8d7da; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #dc3545; }
+					p { color: #666; line-height: 1.6; }
+					.quote-id { background: #f8f9fa; padding: 10px; border-radius: 5px; margin: 15px 0; font-family: monospace; font-size: 12px; word-break: break-all; }
+					.contact-box { background: #e7f3ff; padding: 15px; border-radius: 5px; margin-top: 20px; }
+				</style>
+			</head>
+			<body>
+				<div class="container">
+					<div class="error-icon">⚠️</div>
+					<h1>Cannot Accept Quote</h1>
+					<div class="error-message">`+err.Error()+`</div>
+					<div class="quote-id">Quote ID: `+quoteID+`</div>
+					<div class="contact-box">
+						<p style="margin: 0; font-weight: bold; color: #0056b3;">Need Help?</p>
+						<p style="margin: 5px 0 0 0; font-size: 14px;">Contact IHB Transport support for assistance.</p>
+					</div>
+					<p style="margin-top: 20px; font-size: 12px; color: #999;">You can close this window now.</p>
+				</div>
+			</body>
+			</html>
+		`))
+		return
+	}
+
+	c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(`
+		<!DOCTYPE html>
+		<html>
+		<head>
+			<title>Quote Accepted - IHB Transport</title>
+			<style>
+				body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f5f5f5; }
+				.container { text-align: center; padding: 40px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 500px; }
+				.success-icon { font-size: 60px; margin-bottom: 20px; }
+				h1 { color: #28a745; margin-bottom: 20px; }
+				p { color: #666; line-height: 1.6; }
+				.quote-id { background: #e7f3ff; padding: 10px; border-radius: 5px; margin: 20px 0; font-family: monospace; }
+			</style>
+		</head>
+		<body>
+			<div class="container">
+				<div class="success-icon">✅</div>
+				<h1>Quote Accepted!</h1>
+				<p>Thank you for accepting our quote. We will be in touch shortly.</p>
+				<div class="quote-id">Quote ID: `+quoteID+`</div>
+				<p>You can close this window now.</p>
+			</div>
+		</body>
+		</html>
+	`))
+}
+
+// DeclineInstantQuotePriceHandler handles client declining the instant quote price
+func (h *Handler) DeclineInstantQuotePriceHandler(c *gin.Context) {
+	quoteID := c.Param("id")
+
+	var input struct {
+		Reason string `json:"reason"`
+	}
+	// Reason is optional, so we don't require binding
+	c.ShouldBindJSON(&input)
+
+	if err := h.deliveryService.DeclineInstantQuotePrice(quoteID, input.Reason); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Instant quote declined"})
 }
 
 // GetDeliveriesByEmailHandler retrieves all deliveries for a client email

@@ -16,6 +16,12 @@ type DeliveryInterface interface {
 	FindByStatus(status string) ([]models.DeliveryRequest, error)
 	FindByEmail(email string) ([]models.DeliveryRequest, error)
 	GetInstantQuote(InstantQuote *models.InstantQuote) error
+
+	// InstantQuote operations
+	FindInstantQuoteByID(id uuid.UUID) (*models.InstantQuote, error)
+	FindAllInstantQuotes() ([]models.InstantQuote, error)
+	UpdateInstantQuote(quote *models.InstantQuote) error
+
 	// Update operations
 	UpdateDelivery(delivery *models.DeliveryRequest) error // ← Match implementation
 	UpdateStatus(id uuid.UUID, oldStatus, newStatus string) error
@@ -47,4 +53,5 @@ type EmailLogInterface interface {
 type ReviewsInterface interface {
 	CreateReview(review *models.Reviews) error
 	FindByID(id uuid.UUID) (*models.Reviews, error)
+	FindAll() ([]models.Reviews, error)
 }

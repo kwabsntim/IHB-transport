@@ -501,3 +501,163 @@ func (s *emailService) logEmail(deliveryID, recipientEmail, emailType string, em
 
 	return emailErr
 }
+
+// SendInstantQuotePriceEmail sends email with quoted price for instant quote
+func (s *emailService) SendInstantQuotePriceEmail(clientEmail string, price float64, quoteID string) error {
+	subject := fmt.Sprintf("Price Quote for Instant Quote #%s", quoteID)
+
+	// Build frontend and backend accept/decline links
+	backendAccept := fmt.Sprintf("%s/api/public/instant-quotes/%s/accept", s.baseURL, quoteID)
+	backendDecline := fmt.Sprintf("%s/api/public/instant-quotes/%s/decline", s.baseURL, quoteID)
+	acceptLink := backendAccept
+	declineLink := backendDecline
+	if strings.TrimSpace(s.frontendURL) != "" {
+		acceptLink = fmt.Sprintf("%s/instant-quotes/%s/accept", strings.TrimRight(s.frontendURL, "/"), quoteID)
+		declineLink = fmt.Sprintf("%s/instant-quotes/%s/decline", strings.TrimRight(s.frontendURL, "/"), quoteID)
+	}
+
+	body := fmt.Sprintf(`
+		<!DOCTYPE html>
+		<html>
+		<head>
+			<style>
+				body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+				.container { max-width: 600px; margin: 0 auto; padding: 20px; }
+				.header { background-color: #667eea; color: white; padding: 20px; text-align: center; }
+				.content { background-color: #f9f9f9; padding: 20px; }
+				.price-box { background-color: white; padding: 20px; margin: 20px 0; border-left: 4px solid #667eea; text-align: center; }
+				.button-container { text-align: center; margin: 30px 0; }
+				.button { display: inline-block; padding: 12px 30px; margin: 10px; text-decoration: none; border-radius: 5px; font-weight: bold; }
+				.accept-btn { background-color: #28a745; color: white; }
+				.decline-btn { background-color: #dc3545; color: white; }
+				.footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+			</style>
+		</head>
+		<body>
+			<div class="container">
+				<div class="header">
+					<h1>💰 Your Instant Quote Price is Ready!</h1>
+				</div>
+				<div class="content">
+					<p>We're pleased to provide you with a price for your instant quote request.</p>
+					
+					<div class="price-box">
+						<p><strong>Quote ID:</strong> %s</p>
+						<h2 style="margin: 10px 0; color: #667eea;">Price: %.2f DKK</h2>
+					</div>
+					
+					<p>Please review the price and let us know if you'd like to proceed:</p>
+					
+					<div class="button-container">
+						<a href="%s" class="button accept-btn">✅ Accept Quote</a>
+						<a href="%s" class="button decline-btn">❌ Decline Quote</a>
+					</div>
+					
+					<p style="font-size: 12px; color: #666;">
+						By accepting this quote, you agree to proceed with the delivery at the quoted price.
+					</p>
+				</div>
+				<div class="footer">
+					<p>IHB Transport APS - Reliable Delivery Services</p>
+				</div>
+			</div>
+		</body>
+		</html>
+	`, quoteID, price, acceptLink, declineLink)
+
+	err := s.sendEmail(clientEmail, subject, body)
+	return s.logEmail(quoteID, clientEmail, "INSTANT_QUOTE_PRICE", err)
+}
+
+// SendInstantQuoteAcceptedEmail sends confirmation when client accepts the instant quote price
+func (s *emailService) SendInstantQuoteAcceptedEmail(clientEmail, quoteID string) error {
+	subject := fmt.Sprintf("Instant Quote Accepted - #%s", quoteID)
+
+	body := fmt.Sprintf(`
+		<!DOCTYPE html>
+		<html>
+		<head>
+			<style>
+				body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+				.container { max-width: 600px; margin: 0 auto; padding: 20px; }
+				.header { background-color: #28a745; color: white; padding: 20px; text-align: center; }
+				.content { background-color: #f9f9f9; padding: 20px; }
+				.info-box { background-color: white; padding: 15px; margin: 10px 0; border-left: 4px solid #28a745; }
+				.footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+			</style>
+		</head>
+		<body>
+			<div class="container">
+				<div class="header">
+					<h1>✅ Quote Accepted!</h1>
+				</div>
+				<div class="content">
+					<p>Thank you for accepting our quote!</p>
+					
+					<div class="info-box">
+						<strong>Quote ID:</strong> %s
+					</div>
+					
+					<p>Our team will now process your request and be in touch with you shortly regarding the next steps.</p>
+					<p>If you have any questions, please don't hesitate to contact us.</p>
+				</div>
+				<div class="footer">
+					<p>IHB Transport APS - Reliable Delivery Services</p>
+				</div>
+			</div>
+		</body>
+		</html>
+	`, quoteID)
+
+	err := s.sendEmail(clientEmail, subject, body)
+	return s.logEmail(quoteID, clientEmail, "INSTANT_QUOTE_ACCEPTED", err)
+}
+
+// SendInstantQuoteDeclinedEmail sends confirmation when client declines the instant quote price
+func (s *emailService) SendInstantQuoteDeclinedEmail(clientEmail, quoteID, reason string) error {
+	subject := fmt.Sprintf("Instant Quote Declined - #%s", quoteID)
+
+	reasonText := ""
+	if reason != "" {
+		reasonText = fmt.Sprintf("<p><strong>Reason:</strong> %s</p>", reason)
+	}
+
+	body := fmt.Sprintf(`
+		<!DOCTYPE html>
+		<html>
+		<head>
+			<style>
+				body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+				.container { max-width: 600px; margin: 0 auto; padding: 20px; }
+				.header { background-color: #dc3545; color: white; padding: 20px; text-align: center; }
+				.content { background-color: #f9f9f9; padding: 20px; }
+				.info-box { background-color: white; padding: 15px; margin: 10px 0; border-left: 4px solid #dc3545; }
+				.footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+			</style>
+		</head>
+		<body>
+			<div class="container">
+				<div class="header">
+					<h1>Quote Declined</h1>
+				</div>
+				<div class="content">
+					<p>We've received your response regarding the quote.</p>
+					
+					<div class="info-box">
+						<strong>Quote ID:</strong> %s
+						%s
+					</div>
+					
+					<p>We're sorry we couldn't meet your needs this time. If you have any questions or would like to discuss alternative options, please feel free to reach out.</p>
+				</div>
+				<div class="footer">
+					<p>IHB Transport APS - Reliable Delivery Services</p>
+				</div>
+			</div>
+		</body>
+		</html>
+	`, quoteID, reasonText)
+
+	err := s.sendEmail(clientEmail, subject, body)
+	return s.logEmail(quoteID, clientEmail, "INSTANT_QUOTE_DECLINED", err)
+}

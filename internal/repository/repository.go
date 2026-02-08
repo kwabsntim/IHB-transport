@@ -38,6 +38,31 @@ func (r *deliveryRepository) GetInstantQuote(InstantQuote *models.InstantQuote) 
 	return nil
 }
 
+// FindInstantQuoteByID finds an instant quote by UUID
+func (r *deliveryRepository) FindInstantQuoteByID(id uuid.UUID) (*models.InstantQuote, error) {
+	var quote models.InstantQuote
+	if err := r.db.First(&quote, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+	return &quote, nil
+}
+
+// FindAllInstantQuotes returns all instant quotes ordered by created_at DESC
+func (r *deliveryRepository) FindAllInstantQuotes() ([]models.InstantQuote, error) {
+	var quotes []models.InstantQuote
+	err := r.db.Order("created_at DESC").Find(&quotes).Error
+	return quotes, err
+}
+
+// UpdateInstantQuote updates an instant quote
+func (r *deliveryRepository) UpdateInstantQuote(quote *models.InstantQuote) error {
+	if err := r.db.Save(quote).Error; err != nil {
+		log.Printf("Error updating instant quote: %v", err)
+		return err
+	}
+	return nil
+}
+
 func (r *deliveryRepository) FindAllDeliveries() ([]models.DeliveryRequest, error) {
 	var deliveries []models.DeliveryRequest
 	//loading the info into the deliveries slice
@@ -220,6 +245,15 @@ func (r *reviewsRepository) FindByID(id uuid.UUID) (*models.Reviews, error) {
 		return nil, err
 	}
 	return &rev, nil
+}
+
+// FindAll returns all reviews
+func (r *reviewsRepository) FindAll() ([]models.Reviews, error) {
+	var reviews []models.Reviews
+	if err := r.db.Order("id DESC").Find(&reviews).Error; err != nil {
+		return nil, err
+	}
+	return reviews, nil
 }
 
 // CreateEmailLog creates a new email log entry

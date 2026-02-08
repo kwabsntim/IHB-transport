@@ -24,6 +24,7 @@ func SetupRoutes(router *gin.Engine, handler *Handler) {
 
 		// Reviews endpoints
 		public.POST("/reviews", handler.CreateReviewHandler)
+		public.GET("/reviews/all", handler.GetAllReviewsHandler)
 		public.GET("/reviews/:id", handler.GetReviewByIDHandler)
 
 		
@@ -38,6 +39,11 @@ func SetupRoutes(router *gin.Engine, handler *Handler) {
 		public.GET("/deliveries/:id/accept", handler.AcceptDeliveryPriceHandlerGET) // For email links
 		
 		public.POST("/deliveries/:id/decline", handler.DeclineDeliveryPriceHandler)
+
+		// Client actions on instant quotes
+		public.POST("/instant-quotes/:id/accept", handler.AcceptInstantQuotePriceHandler)
+		public.GET("/instant-quotes/:id/accept", handler.AcceptInstantQuotePriceHandlerGET) // For email links
+		public.POST("/instant-quotes/:id/decline", handler.DeclineInstantQuotePriceHandler)
 	}
 
 	// ==================== PROTECTED ROUTES (Admin/Driver) ====================
@@ -63,6 +69,9 @@ func SetupRoutes(router *gin.Engine, handler *Handler) {
 
 			// Get individual instant quote by ID
 			admin.GET("/instant-quotes/:id", handler.GetInstantQuoteHandler)
+
+			// Set price for instant quote
+			admin.POST("/instant-quotes/:id/price", handler.SetInstantQuotePriceHandler)
 
 			// Admin accepts delivery and sends confirmation email to client
 			admin.POST("/deliveries/:id/accept", handler.AdminAcceptDeliveryHandler)

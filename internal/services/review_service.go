@@ -45,3 +45,8 @@ func (s *reviewService) GetReviewByID(id string) (*models.Reviews, error) {
 	}
 	return rev, nil
 }
+
+// GetAllReviews returns all reviews
+func (s *reviewService) GetAllReviews() ([]models.Reviews, error) {
+	return s.reviewRepo.FindAll()
+}
