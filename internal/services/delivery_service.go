@@ -313,6 +313,60 @@ func (s *deliveryService) AcceptDeliveryPrice(id string) error {
 	return nil
 }
 
+// AdminAcceptDeliveryPrice - Admin accepts the delivery on behalf of client
+func (s *deliveryService) AdminAcceptDeliveryPrice(id string) error {
+	deliveryID, err := uuid.Parse(id)
+	if err != nil {
+		return fmt.Errorf("invalid delivery ID: %w", err)
+	}
+
+	delivery, err := s.deliveryRepo.FindByID(deliveryID)
+	if err != nil {
+		return fmt.Errorf("delivery not found: %w", err)
+	}
+
+	// Validate status (must be PRICED)
+	if delivery.Status != models.StatusPriced {
+		switch delivery.Status {
+		case models.StatusAccepted:
+			return fmt.Errorf("this quote has already been accepted")
+		case models.StatusDeclined:
+			return fmt.Errorf("this quote has already been declined and cannot be accepted")
+		case models.StatusInProgress:
+			return fmt.Errorf("this delivery has already been picked up")
+		case models.StatusDelivered:
+			return fmt.Errorf("this delivery has already been completed")
+		case models.StatusPending:
+			return fmt.Errorf("no price has been set for this delivery yet")
+		default:
+			return fmt.Errorf("cannot accept delivery in current status: %s", delivery.Status)
+		}
+	}
+
+	oldStatus := delivery.Status
+	delivery.Status = models.StatusAccepted
+
+	if err := s.deliveryRepo.UpdateDelivery(delivery); err != nil {
+		return fmt.Errorf("failed to update delivery: %w", err)
+	}
+
+	statusLog := models.StatusLog{
+		DeliveryID: delivery.ID,
+		OldStatus:  oldStatus,
+		NewStatus:  models.StatusAccepted,
+		ChangedBy:  "admin",
+	}
+	if err := s.statusLogRepo.CreateStatusLog(&statusLog); err != nil {
+		fmt.Printf("Warning: failed to create status log: %v\n", err)
+	}
+
+	if err := s.emailService.SendAcceptedEmail(delivery.ClientEmail, delivery.ID.String()); err != nil {
+		fmt.Printf("Warning: failed to send accepted email: %v\n", err)
+	}
+
+	return nil
+}
+
 // MarkAsPickedUp - Driver marks delivery as picked up
 func (s *deliveryService) MarkAsPickedUp(id string) error {
 	deliveryID, err := uuid.Parse(id)

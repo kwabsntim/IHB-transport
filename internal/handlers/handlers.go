@@ -180,6 +180,18 @@ func (h *Handler) AcceptDeliveryPriceHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Delivery price accepted successfully"})
 }
 
+// AdminAcceptDeliveryHandler handles admin accepting the delivery (sends confirmation email to client)
+func (h *Handler) AdminAcceptDeliveryHandler(c *gin.Context) {
+	deliveryID := c.Param("id")
+
+	if err := h.deliveryService.AdminAcceptDeliveryPrice(deliveryID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Delivery accepted by admin and confirmation email sent to client"})
+}
+
 // AcceptDeliveryPriceHandlerGET handles client accepting the price from email link (GET - HTML response)
 func (h *Handler) AcceptDeliveryPriceHandlerGET(c *gin.Context) {
 	deliveryID := c.Param("id")

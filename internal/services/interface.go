@@ -7,6 +7,7 @@ type DeliveryServiceInterface interface {
 	CreateDeliveryRequest(delivery *models.DeliveryRequest) error
 	SetDeliveryPrice(id string, price float64) error
 	AcceptDeliveryPrice(id string) error
+	AdminAcceptDeliveryPrice(id string) error
 	DeclineDeliveryPrice(id string, reason string) error
 	MarkAsPickedUp(id string) error
 	MarkAsDelivered(id string) error

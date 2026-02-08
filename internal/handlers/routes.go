@@ -63,6 +63,9 @@ func SetupRoutes(router *gin.Engine, handler *Handler) {
 
 			// Get individual instant quote by ID
 			admin.GET("/instant-quotes/:id", handler.GetInstantQuoteHandler)
+
+			// Admin accepts delivery and sends confirmation email to client
+			admin.POST("/deliveries/:id/accept", handler.AdminAcceptDeliveryHandler)
 		}
 
 		// Driver routes - update delivery status
