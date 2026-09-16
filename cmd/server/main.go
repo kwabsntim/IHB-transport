@@ -9,6 +9,7 @@ import (
 	"ihb-transport/utils"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -89,8 +90,23 @@ func main() {
 	// Setup all routes with handler
 	handlers.SetupRoutes(router, handler)
 
+	// Self-ping to keep the Render free-tier instance awake (no-op outside Render,
+	// since RENDER_EXTERNAL_URL is only set there). Override with APP_URL if needed.
+	if appURL := firstNonEmpty(os.Getenv("APP_URL"), os.Getenv("RENDER_EXTERNAL_URL")); appURL != "" {
+		go utils.SelfPing(appURL, nil)
+	}
+
 	log.Println("🚀 Server running on :8080")
 	log.Println("📋 API Endpoints:")
 
 	router.Run(":8080")
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, v := range values {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
 }

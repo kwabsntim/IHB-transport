@@ -33,8 +33,8 @@ func Connection() {
 		// Use full connection string (Supabase, Railway, etc.)
 		dsn = databaseURL
 
-		// For Supabase: Ensure SSL is required and add connection parameters
-		if contains(dsn, "supabase") {
+		// For Supabase/Neon: Ensure SSL is required and add connection parameters
+		if contains(dsn, "supabase") || contains(dsn, "neon.tech") {
 			// Add SSL mode if not present
 			if !contains(dsn, "sslmode=") {
 				separator := "?"
