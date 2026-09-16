@@ -7,7 +7,7 @@ import (
 )
 
 type Admin struct {
-	ID           uuid.UUID `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`
+	ID           uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	Email        string    `gorm:"type:varchar(120);unique;not null" json:"email"`
 	PasswordHash string    `gorm:"type:varchar(255);not null" json:"password_hash"`
 	CreatedAt    time.Time `gorm:"autoCreateTime" json:"created_at"`
@@ -16,7 +16,7 @@ type Admin struct {
 
 // delivery request model
 type DeliveryRequest struct {
-	ID          uuid.UUID `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`
+	ID          uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	ClientName  string    `gorm:"type:varchar(120)" json:"client_name"`
 	ClientEmail string    `gorm:"type:varchar(120);not null" json:"client_email"`
 
@@ -55,7 +55,7 @@ type DeliveryRequest struct {
 
 // status log model
 type StatusLog struct {
-	ID         uuid.UUID `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`
+	ID         uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	DeliveryID uuid.UUID `gorm:"type:uuid;not null;index" json:"delivery_id"`
 	OldStatus  string    `gorm:"type:varchar(20)" json:"old_status"`
 	NewStatus  string    `gorm:"type:varchar(20)" json:"new_status"`
@@ -65,7 +65,7 @@ type StatusLog struct {
 
 // email log model
 type EmailLog struct {
-	ID             uuid.UUID `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`
+	ID             uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	DeliveryID     uuid.UUID `gorm:"type:uuid;not null;index" json:"delivery_id"`
 	RecipientEmail string    `gorm:"type:varchar(120);not null" json:"recipient_email"`
 	EmailType      string    `gorm:"type:varchar(50)" json:"email_type"` // REQUEST_RECEIVED, PRICE_SENT, DRIVER_ON_WAY, DELIVERED
@@ -74,7 +74,7 @@ type EmailLog struct {
 	ErrorMessage   string    `gorm:"type:text" json:"error_message,omitempty"`
 }
 type InstantQuote struct {
-	ID              uuid.UUID  `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`
+	ID              uuid.UUID  `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	PickupPoint     string     `json:"pickup_point"`
 	DeliveryAddress string     `json:"delivery_address"`
 	Weight          string     `json:"weight"`
@@ -87,7 +87,7 @@ type InstantQuote struct {
 	UpdatedAt       time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
 }
 type Reviews struct {
-	ID         uuid.UUID `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`
+	ID         uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	ClientName string    `gorm:"type:varchar(120)" json:"client_name"`
 	Content    string    `gorm:"type:text" json:"content"`
 }
